@@ -8,6 +8,12 @@ To iterate on prompts: edit the constants below, restart the service,
 and re-test.  No code changes needed elsewhere.
 """
 
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.schemas import LearnerProfile
+
 # ---------------------------------------------------------------------------
 # 1. SYSTEM PROMPT — Base persona & output schema
 # ---------------------------------------------------------------------------
@@ -109,8 +115,115 @@ knowledge only to fill gaps.
 """
 
 # ---------------------------------------------------------------------------
-# 4. USER MESSAGE BUILDER — assembles the final user prompt
+# 4. LEARNER PROFILE BLOCK — injected when profile data is available
 # ---------------------------------------------------------------------------
+
+LEARNER_PROFILE_BLOCK = """\
+LEARNER PROFILE (use this to deeply personalize the lesson):
+
+Level: {level}
+Past topics studied: {past_topics}
+Weak concepts (REINFORCE these): {weak_concepts}
+Strong concepts (SKIP or condense these): {strong_concepts}
+Recent assessment average: {avg_score}
+Learning style preference: {learning_style}
+Interests: {interests}
+
+PERSONALIZATION RULES — you MUST follow these:
+
+1. VOCABULARY & COMPLEXITY BY LEVEL:
+   • BEGINNER: Use everyday analogies and metaphors the learner can relate to.
+     Define ALL jargon and technical terms when first introduced. Prefer
+     concrete, visual examples over abstract formulas. Keep sentences short.
+   • INTERMEDIATE: Assume foundational knowledge is solid. Use standard
+     technical vocabulary without over-explaining basics. Introduce nuance,
+     edge cases, and "why it matters" context. Relate to their past topics.
+   • ADVANCED: Use precise, discipline-specific language. Skip introductory
+     definitions. Focus on depth — trade-offs, proofs, optimization, research
+     frontiers. Challenge with non-obvious examples and counter-examples.
+
+2. WEAK CONCEPTS — REINFORCE:
+   For each weak concept listed above that is relevant to this lesson:
+   - Add a "Quick Recap" paragraph at the start of the section that depends on it.
+   - Include at least one extra example that specifically targets the weakness.
+   - Frame checkpoint questions to test understanding of the weak concept.
+   - If the weak concept is a prerequisite, dedicate a mini-section to it.
+
+3. STRONG CONCEPTS — CONDENSE OR SKIP:
+   For each strong concept listed above:
+   - Do NOT re-teach it from scratch.
+   - At most, include a one-sentence acknowledgment ("You already know X…").
+   - Spend the saved time on weak areas or deeper material instead.
+
+4. INTERESTS — ENGAGE:
+   When the learner has listed interests, use them to choose analogies and
+   examples. For instance, if they're interested in "sports", use sports
+   analogies to explain abstract concepts.
+
+5. PAST PERFORMANCE:
+   - If avg_score < 50%: Slow down, add more scaffolding, extra examples,
+     simpler checkpoint questions with hints.
+   - If avg_score 50–80%: Standard pacing with moderate challenge.
+   - If avg_score > 80%: Push further — harder questions, less hand-holding,
+     introduce stretch goals or bonus sections.
+"""
+
+# ---------------------------------------------------------------------------
+# 5. PREVIEW SYSTEM PROMPT — fast outline generation
+# ---------------------------------------------------------------------------
+
+PREVIEW_SYSTEM_PROMPT = """\
+You are an expert educational curriculum designer.
+The user wants a QUICK PREVIEW of a lesson plan — NOT the full lesson.
+
+Return ONLY a JSON object with this schema:
+{
+  "title": "<string>",
+  "estimated_duration": <integer, minutes>,
+  "level": "<beginner|intermediate|advanced>",
+  "section_count": <integer>,
+  "sections": [
+    {
+      "section_title": "<string>",
+      "summary": "<one-line summary of what this section covers>"
+    }
+  ],
+  "has_final_assessment": <boolean>
+}
+
+RULES:
+- Keep it SHORT — one line per section summary, no explanation scripts.
+- Follow the time-adaptation rules for section count.
+- If a learner profile is provided, reflect personalization in the outline
+  (e.g., include recap sections for weak concepts, skip strong concepts).
+- Respond with valid JSON only.
+"""
+
+# ---------------------------------------------------------------------------
+# 6. USER MESSAGE BUILDER — assembles the final user prompt
+# ---------------------------------------------------------------------------
+
+
+def build_learner_profile_block(profile: LearnerProfile | None) -> str:
+    """Format the learner profile into the prompt block. Returns '' if None."""
+    if profile is None:
+        return ""
+
+    past_topics = ", ".join(profile.past_topics) if profile.past_topics else "None yet"
+    weak = ", ".join(profile.weak_concepts) if profile.weak_concepts else "None identified"
+    strong = ", ".join(profile.strong_concepts) if profile.strong_concepts else "None identified"
+    interests = ", ".join(profile.interests) if profile.interests else "Not specified"
+    avg = f"{profile.avg_score}%" if profile.avg_score is not None else "No data yet"
+
+    return LEARNER_PROFILE_BLOCK.format(
+        level=profile.level,
+        past_topics=past_topics,
+        weak_concepts=weak,
+        strong_concepts=strong,
+        avg_score=avg,
+        learning_style=profile.learning_style,
+        interests=interests,
+    )
 
 
 def build_user_message(
@@ -121,10 +234,15 @@ def build_user_message(
     available_time_minutes: int,
     learning_objective: str,
     preferred_style: str,
+    learner_profile: LearnerProfile | None = None,
 ) -> str:
     """Build the user-turn message from request parameters."""
 
     topic_line = f"Topic: {topic}" if topic else "Topic: (derived from the uploaded material excerpts above)"
+
+    profile_section = ""
+    if learner_profile:
+        profile_section = "\n" + build_learner_profile_block(learner_profile) + "\n"
 
     return f"""\
 Please create a lesson plan with the following requirements:
@@ -135,7 +253,8 @@ Language: {language}
 Available time: {available_time_minutes} minutes
 Learning objective: {learning_objective}
 Preferred learning style: {preferred_style}
-
+{profile_section}
 Follow the time-adaptation rules carefully for {available_time_minutes} minutes.
+{"Apply the personalization rules based on the learner profile above." if learner_profile else ""}
 Respond with the JSON lesson plan only.
 """

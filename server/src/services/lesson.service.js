@@ -1,6 +1,36 @@
 const Lesson = require("../models/Lesson");
+const LearnerProfile = require("../models/LearnerProfile");
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
+
+/**
+ * Fetch the learner profile for a user and serialize it for the AI service.
+ */
+const getProfilePayload = async (userId) => {
+  const profile = await LearnerProfile.findOne({ user: userId }).lean();
+  if (!profile) return null;
+
+  // Compute average score from recent assessments
+  let avgScore = null;
+  if (profile.pastScores && profile.pastScores.length > 0) {
+    const total = profile.pastScores.reduce(
+      (sum, s) => sum + (s.maxScore > 0 ? (s.score / s.maxScore) * 100 : 0),
+      0
+    );
+    avgScore = Math.round(total / profile.pastScores.length);
+  }
+
+  return {
+    level: profile.level || "beginner",
+    preferred_language: profile.preferredLanguage || "en",
+    learning_style: profile.learningStyle || "visual",
+    interests: profile.interests || [],
+    past_topics: profile.pastTopics || [],
+    weak_concepts: profile.weakConcepts || [],
+    strong_concepts: profile.strongConcepts || [],
+    avg_score: avgScore,
+  };
+};
 
 /**
  * Call the AI service to generate a lesson plan and persist it.
@@ -16,6 +46,9 @@ const createLesson = async (userId, body) => {
     preferred_style,
   } = body;
 
+  // Fetch learner profile from MongoDB
+  const learnerProfile = await getProfilePayload(userId);
+
   // Call the AI service
   const response = await fetch(`${AI_SERVICE_URL}/lessons/plan`, {
     method: "POST",
@@ -23,11 +56,12 @@ const createLesson = async (userId, body) => {
     body: JSON.stringify({
       material_id: material_id || null,
       topic: topic || null,
-      learner_level,
-      language: language || "en",
+      learner_level: learner_level || (learnerProfile && learnerProfile.level) || "beginner",
+      language: language || (learnerProfile && learnerProfile.preferred_language) || "en",
       available_time_minutes,
       learning_objective,
-      preferred_style: preferred_style || "visual",
+      preferred_style: preferred_style || (learnerProfile && learnerProfile.learning_style) || "visual",
+      learner_profile: learnerProfile,
     }),
   });
 
@@ -46,11 +80,11 @@ const createLesson = async (userId, body) => {
   const lesson = await Lesson.create({
     title,
     topic,
-    learnerLevel: learner_level,
-    language: language || "en",
+    learnerLevel: learner_level || (learnerProfile && learnerProfile.level) || "beginner",
+    language: language || (learnerProfile && learnerProfile.preferred_language) || "en",
     availableTimeMinutes: available_time_minutes,
     learningObjective: learning_objective,
-    preferredStyle: preferred_style || "visual",
+    preferredStyle: preferred_style || (learnerProfile && learnerProfile.learning_style) || "visual",
     plan,
     groundedInMaterial: data.grounded_in_material || false,
     material: material_id || undefined,
@@ -59,6 +93,46 @@ const createLesson = async (userId, body) => {
   });
 
   return lesson;
+};
+
+/**
+ * Call the AI service for a fast lesson plan preview (outline only).
+ */
+const previewLesson = async (userId, body) => {
+  const {
+    material_id,
+    topic,
+    learner_level,
+    language,
+    available_time_minutes,
+    learning_objective,
+    preferred_style,
+  } = body;
+
+  // Fetch learner profile from MongoDB
+  const learnerProfile = await getProfilePayload(userId);
+
+  const response = await fetch(`${AI_SERVICE_URL}/lessons/plan/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      material_id: material_id || null,
+      topic: topic || null,
+      learner_level: learner_level || (learnerProfile && learnerProfile.level) || "beginner",
+      language: language || (learnerProfile && learnerProfile.preferred_language) || "en",
+      available_time_minutes,
+      learning_objective,
+      preferred_style: preferred_style || (learnerProfile && learnerProfile.learning_style) || "visual",
+      learner_profile: learnerProfile,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `AI service returned ${response.status}`);
+  }
+
+  return response.json();
 };
 
 /**
@@ -82,4 +156,4 @@ const getLessonById = async (lessonId, userId) => {
   return lesson;
 };
 
-module.exports = { createLesson, getUserLessons, getLessonById };
+module.exports = { createLesson, previewLesson, getUserLessons, getLessonById };

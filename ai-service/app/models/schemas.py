@@ -11,6 +11,22 @@ class HealthResponse(BaseModel):
 
 
 # ---------------------------------------------------------------------------
+# Learner Profile — passed from the Node server
+# ---------------------------------------------------------------------------
+
+class LearnerProfile(BaseModel):
+    """Learner profile data fetched from MongoDB by the Node server."""
+    level: str = "beginner"
+    preferred_language: str = "en"
+    learning_style: str = "visual"
+    interests: list[str] = []
+    past_topics: list[str] = []
+    weak_concepts: list[str] = []
+    strong_concepts: list[str] = []
+    avg_score: int | None = None
+
+
+# ---------------------------------------------------------------------------
 # Lesson Plan — Request
 # ---------------------------------------------------------------------------
 
@@ -45,6 +61,10 @@ class LessonPlanRequest(BaseModel):
         default="visual",
         description="visual, auditory, reading, or kinesthetic.",
         examples=["visual"],
+    )
+    learner_profile: LearnerProfile | None = Field(
+        default=None,
+        description="Full learner profile from MongoDB, passed by the Node server.",
     )
 
 
@@ -103,3 +123,29 @@ class LessonPlanResponse(BaseModel):
     plan: LessonPlan | MultiDayLessonPlan
     grounded_in_material: bool = False
     material_id: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Lesson Plan Preview — lightweight outline
+# ---------------------------------------------------------------------------
+
+class PreviewSection(BaseModel):
+    """One section in a lesson preview — just title and summary."""
+    section_title: str
+    summary: str
+
+
+class LessonPlanPreview(BaseModel):
+    """Fast outline returned before committing to full generation."""
+    title: str
+    estimated_duration: int
+    level: str
+    section_count: int
+    sections: list[PreviewSection]
+    has_final_assessment: bool = True
+
+
+class PreviewResponse(BaseModel):
+    """Top-level response for the preview endpoint."""
+    success: bool = True
+    preview: LessonPlanPreview

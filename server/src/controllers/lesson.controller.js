@@ -9,6 +9,15 @@ const create = async (req, res) => {
   }
 };
 
+const preview = async (req, res) => {
+  try {
+    const data = await lessonService.previewLesson(req.user._id, req.body);
+    res.json(data);
+  } catch (err) {
+    res.status(502).json({ message: err.message });
+  }
+};
+
 const list = async (req, res) => {
   try {
     const lessons = await lessonService.getUserLessons(req.user._id);
@@ -28,4 +37,4 @@ const getById = async (req, res) => {
   }
 };
 
-module.exports = { create, list, getById };
+module.exports = { create, preview, list, getById };
