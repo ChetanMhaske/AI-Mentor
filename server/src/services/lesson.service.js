@@ -211,4 +211,29 @@ const switchSectionLanguage = async (lessonId, sectionIndex, targetLanguage, use
   return lesson;
 };
 
-module.exports = { createLesson, previewLesson, getUserLessons, getLessonById, switchSectionLanguage };
+/**
+ * Callback from AI Service to update a section with generated video/audio URLs.
+ */
+const updateSectionVideo = async (lessonId, sectionIndex, videoData) => {
+  const lesson = await Lesson.findById(lessonId);
+  if (!lesson) throw new Error("Lesson not found");
+
+  const { status, video_url, audio_url, error } = videoData;
+
+  let plan = lesson.plan;
+  if (!plan || !plan.sections || sectionIndex < 0 || sectionIndex >= plan.sections.length) {
+    throw new Error("Invalid section index");
+  }
+
+  plan.sections[sectionIndex].render_status = status;
+  if (video_url) plan.sections[sectionIndex].video_url = video_url;
+  if (audio_url) plan.sections[sectionIndex].audio_url = audio_url;
+  if (error) plan.sections[sectionIndex].error = error;
+
+  lesson.markModified("plan");
+  await lesson.save();
+
+  return lesson;
+};
+
+module.exports = { createLesson, previewLesson, getUserLessons, getLessonById, switchSectionLanguage, updateSectionVideo };

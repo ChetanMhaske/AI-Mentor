@@ -3,8 +3,9 @@ Lessons Router — POST /lessons/plan and POST /lessons/plan/preview
 """
 
 import logging
+import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, BackgroundTasks
 
 from app.models.schemas import (
     LessonPlanRequest,
@@ -12,8 +13,11 @@ from app.models.schemas import (
     PreviewResponse,
     SwitchLanguageRequest,
     SwitchLanguageResponse,
+    RenderRequest,
+    RenderResponse,
+    JobStatusResponse,
 )
-from app.services import llm_service, rag_service
+from app.services import llm_service, rag_service, video_service
 
 logger = logging.getLogger(__name__)
 
@@ -107,3 +111,36 @@ async def switch_language(request: SwitchLanguageRequest):
         )
 
     return SwitchLanguageResponse(success=True, section=translated_section)
+
+
+@router.post("/{lesson_id}/render", response_model=RenderResponse)
+async def render_section(lesson_id: str, request: RenderRequest, background_tasks: BackgroundTasks):
+    """
+    Queue a background task to render TTS and Avatar for a section.
+    """
+    if request.lesson_id != lesson_id:
+        raise HTTPException(status_code=400, detail="Lesson ID mismatch")
+
+    job_id = str(uuid.uuid4())
+    
+    background_tasks.add_task(
+        video_service.render_video_async,
+        job_id,
+        lesson_id,
+        request.section_index,
+        request.explanation_script
+    )
+
+    return RenderResponse(success=True, job_id=job_id, status="processing")
+
+
+@router.get("/{lesson_id}/render/{job_id}/status", response_model=JobStatusResponse)
+async def get_render_status(lesson_id: str, job_id: str):
+    """
+    Get the status of a background video render job.
+    """
+    status = video_service.get_job_status(job_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    return status

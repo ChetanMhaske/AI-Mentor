@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Upload from "./pages/Upload";
 import Lesson from "./pages/Lesson";
+import LessonPlayer from "./pages/LessonPlayer";
 
 function App() {
   return (
@@ -11,6 +12,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/upload" element={<Upload />} />
         <Route path="/lesson" element={<Lesson />} />
+        <Route path="/lesson/:id/play" element={<LessonPlayer />} />
       </Route>
     </Routes>
   );

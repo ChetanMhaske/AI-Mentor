@@ -89,6 +89,9 @@ class Section(BaseModel):
     )
     visual_spec: dict | None = None
     checkpoint_question: CheckpointQuestion | None = None
+    video_url: str | None = None
+    audio_url: str | None = None
+    render_status: str | None = Field(default="pending", description="pending, ready, failed")
 
 
 class AssessmentQuestion(BaseModel):
@@ -165,3 +168,30 @@ class SwitchLanguageRequest(BaseModel):
 class SwitchLanguageResponse(BaseModel):
     success: bool = True
     section: Section
+
+
+# ---------------------------------------------------------------------------
+# Video Rendering
+# ---------------------------------------------------------------------------
+
+class RenderRequest(BaseModel):
+    """Request to render a video for a section."""
+    lesson_id: str
+    section_index: int
+    explanation_script: str
+
+
+class RenderResponse(BaseModel):
+    """Response when a render job is queued."""
+    success: bool = True
+    job_id: str
+    status: str = "processing"
+
+
+class JobStatusResponse(BaseModel):
+    """Status of a rendering job."""
+    job_id: str
+    status: str
+    video_url: str | None = None
+    audio_url: str | None = None
+    error: str | None = None

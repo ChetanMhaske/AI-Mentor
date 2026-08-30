@@ -56,4 +56,15 @@ const switchLanguage = async (req, res) => {
   }
 };
 
-module.exports = { create, preview, list, getById, switchLanguage };
+const updateSectionVideo = async (req, res) => {
+  try {
+    const { id, n } = req.params;
+    const lesson = await lessonService.updateSectionVideo(id, parseInt(n), req.body);
+    res.json({ message: "Section updated", lesson });
+  } catch (err) {
+    const status = err.message === "Lesson not found" ? 404 : 500;
+    res.status(status).json({ message: err.message });
+  }
+};
+
+module.exports = { create, preview, list, getById, switchLanguage, updateSectionVideo };
