@@ -10,6 +10,8 @@ from app.models.schemas import (
     LessonPlanRequest,
     LessonPlanResponse,
     PreviewResponse,
+    SwitchLanguageRequest,
+    SwitchLanguageResponse,
 )
 from app.services import llm_service, rag_service
 
@@ -87,3 +89,21 @@ async def preview_lesson_plan(request: LessonPlanRequest):
         )
 
     return PreviewResponse(success=True, preview=preview)
+
+
+@router.post("/switch-language", response_model=SwitchLanguageResponse)
+async def switch_language(request: SwitchLanguageRequest):
+    """
+    Translate a specific section into a new language while preserving 
+    technical terms and lesson structure.
+    """
+    try:
+        translated_section = await llm_service.translate_lesson_section(request)
+    except Exception as exc:
+        logger.exception("Section translation failed")
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM translation failed: {exc}",
+        )
+
+    return SwitchLanguageResponse(success=True, section=translated_section)

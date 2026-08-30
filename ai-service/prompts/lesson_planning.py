@@ -31,7 +31,11 @@ RULES:
 - Write the explanation_script for each section as if you are a warm,
   encouraging tutor speaking directly to the learner.
 - The language of ALL text content (titles, explanations, examples,
-  questions) MUST be in the requested language.
+  questions) MUST be in the requested language (e.g. if requested language
+  is "Hindi", write in Hindi script; if "Hinglish", write in Romanized Hindi).
+- CRITICAL CONSTRAINT: Keep technical terms, formulas, code snippets, and
+  proper nouns in their original language (usually English) unless there is
+  a universally accepted translation.
 
 OUTPUT SCHEMA:
 {
@@ -257,4 +261,25 @@ Preferred learning style: {preferred_style}
 Follow the time-adaptation rules carefully for {available_time_minutes} minutes.
 {"Apply the personalization rules based on the learner profile above." if learner_profile else ""}
 Respond with the JSON lesson plan only.
+"""
+
+# ---------------------------------------------------------------------------
+# 7. SECTION TRANSLATION PROMPT — mid-lesson language switch
+# ---------------------------------------------------------------------------
+
+SECTION_TRANSLATION_PROMPT = """\
+You are an expert translator and educational tutor.
+You are given a single section of a lesson plan in JSON format.
+Your task is to translate ALL text content (section_title, explanation_script, examples, and checkpoint questions) into the requested target language: {target_language}.
+
+CRITICAL CONSTRAINTS:
+1. Keep technical terms, formulas, code snippets, and proper nouns in their original language (usually English).
+2. If the target language is "hinglish", write in Romanized conversational Hindi blended with English.
+3. Retain the exact same JSON schema and structure as the input.
+4. Respond with valid JSON ONLY. No markdown fences.
+5. Maintain the same educational tone and level of detail as the original.
+{profile_section}
+
+INPUT SECTION JSON:
+{section_json}
 """

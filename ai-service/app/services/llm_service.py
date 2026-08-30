@@ -15,12 +15,15 @@ from app.models.schemas import (
     LessonPlanPreview,
     LessonPlanRequest,
     MultiDayLessonPlan,
+    SwitchLanguageRequest,
+    Section,
 )
 from prompts.lesson_planning import (
     SYSTEM_PROMPT_BASE,
     TIME_ADAPTATION_RULES,
     RAG_GROUNDING_BLOCK,
     PREVIEW_SYSTEM_PROMPT,
+    SECTION_TRANSLATION_PROMPT,
     build_learner_profile_block,
     build_user_message,
 )
@@ -165,3 +168,40 @@ async def generate_lesson_preview(
     preview = LessonPlanPreview.model_validate(data)
     logger.info("Lesson preview generated: %s (%d sections)", preview.title, preview.section_count)
     return preview
+
+
+async def translate_lesson_section(request: SwitchLanguageRequest) -> Section:
+    """Translate a single section using Gemini."""
+    client = _get_client()
+
+    profile_block = build_learner_profile_block(request.learner_profile)
+    profile_section = f"\nLEARNER PROFILE CONTEXT:\n{profile_block}\n" if profile_block else ""
+
+    section_json = request.section.model_dump_json(indent=2)
+
+    prompt = SECTION_TRANSLATION_PROMPT.format(
+        target_language=request.target_language,
+        profile_section=profile_section,
+        section_json=section_json,
+    )
+
+    logger.info(
+        "Translating section to %s — model=%s",
+        request.target_language,
+        settings.LLM_MODEL,
+    )
+
+    response = client.models.generate_content(
+        model=settings.LLM_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.4, # Lower temp for translation consistency
+        ),
+    )
+
+    raw_text = response.text
+    data = json.loads(raw_text)
+
+    translated_section = Section.model_validate(data)
+    return translated_section

@@ -156,4 +156,59 @@ const getLessonById = async (lessonId, userId) => {
   return lesson;
 };
 
-module.exports = { createLesson, previewLesson, getUserLessons, getLessonById };
+/**
+ * Call the AI service to translate a specific section of a lesson,
+ * and update the lesson in MongoDB.
+ */
+const switchSectionLanguage = async (lessonId, sectionIndex, targetLanguage, userId) => {
+  // 1. Fetch lesson
+  const lesson = await Lesson.findOne({ _id: lessonId, createdBy: userId });
+  if (!lesson) throw new Error("Lesson not found");
+  
+  // 2. Validate section
+  let plan = lesson.plan;
+  let sections = plan.sections;
+  if (plan.multi_day && plan.days) {
+    // For simplicity, if it's multi-day, assume flat section index or first day for now, 
+    // but the request should ideally handle day indexing too. 
+    // Assuming simple lesson for this implementation:
+    throw new Error("Mid-lesson language switch on multi-day plans is not supported yet.");
+  }
+
+  if (!sections || sectionIndex < 0 || sectionIndex >= sections.length) {
+    throw new Error("Invalid section index");
+  }
+
+  const sectionToTranslate = sections[sectionIndex];
+
+  // 3. Fetch learner profile
+  const learnerProfile = await getProfilePayload(userId);
+
+  // 4. Call AI service
+  const response = await fetch(`${AI_SERVICE_URL}/lessons/switch-language`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      section: sectionToTranslate,
+      target_language: targetLanguage,
+      learner_profile: learnerProfile,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `AI service returned ${response.status}`);
+  }
+
+  const data = await response.json();
+  const translatedSection = data.section;
+
+  // 5. Update and save to MongoDB
+  sections[sectionIndex] = translatedSection;
+  lesson.markModified("plan"); // Since plan is a Mixed type
+  await lesson.save();
+
+  return lesson;
+};
+
+module.exports = { createLesson, previewLesson, getUserLessons, getLessonById, switchSectionLanguage };

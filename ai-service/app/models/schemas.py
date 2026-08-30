@@ -149,3 +149,19 @@ class PreviewResponse(BaseModel):
     """Top-level response for the preview endpoint."""
     success: bool = True
     preview: LessonPlanPreview
+
+
+# ---------------------------------------------------------------------------
+# Mid-Lesson Language Switch
+# ---------------------------------------------------------------------------
+
+class SwitchLanguageRequest(BaseModel):
+    """Request to translate a single section of a lesson."""
+    section: Section
+    target_language: str
+    learner_profile: LearnerProfile | None = None
+
+
+class SwitchLanguageResponse(BaseModel):
+    success: bool = True
+    section: Section

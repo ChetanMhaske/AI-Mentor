@@ -37,4 +37,23 @@ const getById = async (req, res) => {
   }
 };
 
-module.exports = { create, preview, list, getById };
+const switchLanguage = async (req, res) => {
+  try {
+    const { sectionIndex, targetLanguage } = req.body;
+    if (sectionIndex === undefined || !targetLanguage) {
+      return res.status(400).json({ message: "sectionIndex and targetLanguage are required" });
+    }
+    const lesson = await lessonService.switchSectionLanguage(
+      req.params.id,
+      sectionIndex,
+      targetLanguage,
+      req.user._id
+    );
+    res.json({ lesson });
+  } catch (err) {
+    const status = err.message === "Lesson not found" ? 404 : 500;
+    res.status(status).json({ message: err.message });
+  }
+};
+
+module.exports = { create, preview, list, getById, switchLanguage };
