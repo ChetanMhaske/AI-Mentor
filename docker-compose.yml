@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:7
+    container_name: ai-mentor-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - ai-mentor-network
+
+  server:
+    build: ./server
+    container_name: ai-mentor-server
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./server/.env
+    depends_on:
+      - mongodb
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - ai-mentor-network
+
+  client:
+    build: ./client
+    container_name: ai-mentor-client
+    ports:
+      - "5173:5173"
+    env_file:
+      - ./client/.env
+    depends_on:
+      - server
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    networks:
+      - ai-mentor-network
+
+  ai-service:
+    build: ./ai-service
+    container_name: ai-mentor-ai-service
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./ai-service/.env
+    volumes:
+      - ./ai-service:/app
+    networks:
+      - ai-mentor-network
+
+volumes:
+  mongo-data:
+
+networks:
+  ai-mentor-network:
+    driver: bridge
