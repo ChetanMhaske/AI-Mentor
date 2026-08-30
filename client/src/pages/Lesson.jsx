@@ -15,7 +15,10 @@ function Lesson() {
             "Authorization": `Bearer ${localStorage.getItem("token")}`
           }
         });
-        if (!res.ok) throw new Error("Failed to load lessons");
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || "Failed to load lessons");
+        }
         const data = await res.json();
         setLessons(data.lessons || []);
       } catch (err) {
