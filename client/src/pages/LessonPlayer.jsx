@@ -17,6 +17,16 @@ function LessonPlayer() {
   const [evaluationResult, setEvaluationResult] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState(null);
 
+  const sections = lesson?.plan?.sections || [];
+  const currentSection = sections[currentSectionIndex];
+
+  // Reset checkpoint state when section changes
+  useEffect(() => {
+    setShowCheckpoint(false);
+    setEvaluationResult(null);
+    setCurrentQuestion(currentSection?.checkpoint_question || null);
+  }, [currentSectionIndex, currentSection]);
+
   // In a real app, you would fetch from the backend:
   // /api/lessons/:id
   useEffect(() => {
@@ -55,16 +65,6 @@ function LessonPlayer() {
       </div>
     );
   }
-
-  const sections = lesson.plan.sections || [];
-  const currentSection = sections[currentSectionIndex];
-
-  // Reset checkpoint state when section changes
-  useEffect(() => {
-    setShowCheckpoint(false);
-    setEvaluationResult(null);
-    setCurrentQuestion(currentSection?.checkpoint_question || null);
-  }, [currentSectionIndex, currentSection]);
 
   const handleMediaEnded = () => {
     if (currentQuestion) {
