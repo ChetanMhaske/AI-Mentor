@@ -9,6 +9,7 @@ function Progress() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -19,26 +20,7 @@ function Progress() {
         if (!res.ok) throw new Error("Failed to load progress");
         setData(await res.json());
       } catch {
-        // Mock data fallback
-        setData({
-          profile: {
-            pastTopics: ["Ohm's Law", "Circuit Analysis", "Photosynthesis"],
-            weakConcepts: ["Resistance and wire thickness", "Kirchhoff's Voltage Law"],
-            strongConcepts: ["Ohm's Law formula", "Basic circuit concepts", "Series circuits"],
-            learningHistory: [
-              { topic: "Ohm's Law", percentage: 85, completedAt: "2026-08-25" },
-              { topic: "Circuit Analysis", percentage: 60, completedAt: "2026-08-27" },
-              { topic: "Photosynthesis", percentage: 92, completedAt: "2026-08-29" },
-            ]
-          },
-          scoresOverTime: [
-            { topic: "Ohm's Law", percentage: 85 },
-            { topic: "Circuits", percentage: 60 },
-            { topic: "Photosynthesis", percentage: 92 },
-            { topic: "Kirchhoff", percentage: 45 },
-          ],
-          suggestedNextTopic: "Kirchhoff's Circuit Laws"
-        });
+        setError("Service Unavailable: Could not connect to backend");
       } finally {
         setLoading(false);
       }
@@ -50,6 +32,16 @@ function Progress() {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin text-pencil-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full space-y-4">
+        <AlertTriangle className="w-12 h-12 text-red-500" />
+        <p className="text-cream-100 font-semibold">{error}</p>
+        <p className="text-warm-400">Please ensure the backend services are running.</p>
       </div>
     );
   }

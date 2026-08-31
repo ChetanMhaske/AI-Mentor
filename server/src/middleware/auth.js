@@ -5,8 +5,7 @@ const mongoose = require("mongoose");
 const auth = async (req, res, next) => {
   try {
     if (mongoose.connection.readyState !== 1) {
-      req.user = { _id: "mock-user-id", name: "User" };
-      return next();
+      return res.status(503).json({ message: "Service Unavailable: Database not connected" });
     }
 
     const header = req.header("Authorization");

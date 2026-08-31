@@ -10,6 +10,7 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [lessons, setLessons] = useState([]);
   const [progress, setProgress] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -19,8 +20,18 @@ function Dashboard() {
       fetch("/api/lessons", { headers }).then(r => r.json()),
       fetch("/api/progress", { headers }).then(r => r.json())
     ]).then(([lessonRes, progressRes]) => {
-      if (lessonRes.status === "fulfilled") setLessons(lessonRes.value.lessons || []);
-      if (progressRes.status === "fulfilled") setProgress(progressRes.value);
+      if (lessonRes.status === "fulfilled" && lessonRes.value.lessons) {
+        setLessons(lessonRes.value.lessons);
+      } else {
+        setError("Failed to load lessons");
+      }
+      if (progressRes.status === "fulfilled" && progressRes.value.profile) {
+        setProgress(progressRes.value);
+      } else {
+        setError("Failed to load progress");
+      }
+    }).catch(() => {
+      setError("Service Unavailable: Could not connect to backend");
     }).finally(() => setLoading(false));
   }, []);
 
@@ -28,19 +39,21 @@ function Dashboard() {
   const scores = progress?.scoresOverTime || [];
   const recentLessons = lessons.slice(0, 3);
   const suggestedNext = progress?.suggestedNextTopic;
-  
-  // Mock data for when backend isn't connected
-  const mockScores = scores.length > 0 ? scores : [
-    { topic: "Ohm's Law", percentage: 85 },
-    { topic: "Circuits", percentage: 60 },
-    { topic: "Photosynthesis", percentage: 92 },
-    { topic: "Kirchhoff", percentage: 45 },
-  ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin text-pencil-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full space-y-4">
+        <AlertTriangle className="w-12 h-12 text-red-500" />
+        <p className="text-cream-100 font-semibold">{error}</p>
+        <p className="text-warm-400">Please ensure the backend services are running.</p>
       </div>
     );
   }
@@ -91,17 +104,23 @@ function Dashboard() {
             Performance Over Time
           </h2>
           <div className="flex items-end gap-3 h-40 px-2">
-            {mockScores.map((s, i) => {
-              const height = s.percentage;
-              const color = s.percentage >= 80 ? "bg-leaf-500" : s.percentage >= 50 ? "bg-pencil-500" : "bg-eraser-500";
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                  <span className="text-xs font-bold text-warm-300">{Math.round(s.percentage)}%</span>
-                  <div className={`w-full rounded-t-lg ${color} transition-all duration-700 ease-out min-h-[4px]`} style={{ height: `${height}%` }} />
-                  <span className="text-[10px] text-warm-500 truncate w-full text-center">{s.topic}</span>
-                </div>
-              );
-            })}
+            {scores.length === 0 ? (
+              <div className="w-full h-full flex items-center justify-center text-warm-500 text-sm">
+                No assessment data yet.
+              </div>
+            ) : (
+              scores.map((s, i) => {
+                const height = s.percentage;
+                const color = s.percentage >= 80 ? "bg-leaf-500" : s.percentage >= 50 ? "bg-pencil-500" : "bg-eraser-500";
+                return (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                    <span className="text-xs font-bold text-warm-300">{Math.round(s.percentage)}%</span>
+                    <div className={`w-full rounded-t-lg ${color} transition-all duration-700 ease-out min-h-[4px]`} style={{ height: `${height}%` }} />
+                    <span className="text-[10px] text-warm-500 truncate w-full text-center">{s.topic}</span>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
