@@ -91,7 +91,7 @@ async def process_material(file_bytes: bytes, filename: str, material_id: str):
     logger.info("Generating embeddings via Gemini API...")
     client = _get_gemini_client()
     resp = client.models.embed_content(
-        model="text-embedding-004",
+        model="gemini-embedding-2",
         contents=chunks
     )
     embeddings = [e.values for e in resp.embeddings]
@@ -122,7 +122,7 @@ async def retrieve_chunks(material_id: str, query: str = None, top_k: int = 5) -
     # Embed query using Gemini
     client = _get_gemini_client()
     resp = client.models.embed_content(
-        model="text-embedding-004",
+        model="gemini-embedding-2",
         contents=query
     )
     query_embedding = resp.embeddings[0].values

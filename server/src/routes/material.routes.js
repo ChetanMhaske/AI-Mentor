@@ -1,6 +1,5 @@
 const express = require("express");
 const multer = require("multer");
-const FormData = require("form-data");
 const auth = require("../middleware/auth");
 const Material = require("../models/Material");
 
@@ -27,11 +26,12 @@ router.post("/upload", auth, upload.single("file"), async (req, res) => {
     });
 
     // 2. Forward the file to the Python AI service
-    const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://127.0.0.1:8000";
+    const AI_SERVICE_URL = (process.env.AI_SERVICE_URL || "http://127.0.0.1:8000").replace("localhost", "127.0.0.1");
     
-    // Create form data
+    // Create native form data
     const formData = new FormData();
-    formData.append("file", req.file.buffer, req.file.originalname);
+    const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
+    formData.append("file", blob, req.file.originalname);
     formData.append("material_id", material.ai_service_material_id);
 
     const aiRes = await fetch(`${AI_SERVICE_URL}/materials/upload`, {

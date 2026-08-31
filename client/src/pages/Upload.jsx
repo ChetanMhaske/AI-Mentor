@@ -86,7 +86,7 @@ function Upload() {
         });
         if (!uploadRes.ok) throw new Error("Failed to upload material");
         const uploadData = await uploadRes.json();
-        materialId = uploadData.material?.ai_service_material_id;
+        materialId = uploadData.material?._id;
       }
 
       // Generate lesson plan

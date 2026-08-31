@@ -8,17 +8,31 @@ const auth = async (req, res, next) => {
       return res.status(503).json({ message: "Service Unavailable: Database not connected" });
     }
 
+    let user;
     const header = req.header("Authorization");
-    if (!header || !header.startsWith("Bearer ")) {
-      return res.status(401).json({ message: "No token provided" });
+    
+    if (header && header.startsWith("Bearer ")) {
+      const token = header.replace("Bearer ", "");
+      if (token !== "null" && token !== "undefined") {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          user = await User.findById(decoded.id).select("-password");
+        } catch (e) {
+          // Token invalid, fall through to auto-user creation
+        }
+      }
     }
 
-    const token = header.replace("Bearer ", "");
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
-
+    // Auto-login/create default user for prototype (since there is no login UI)
     if (!user) {
-      return res.status(401).json({ message: "User not found" });
+      user = await User.findOne({ email: "demo@example.com" });
+      if (!user) {
+        user = await User.create({
+          name: "Demo User",
+          email: "demo@example.com",
+          password: "password123", // Will be hashed by model pre-save
+        });
+      }
     }
 
     req.user = user;

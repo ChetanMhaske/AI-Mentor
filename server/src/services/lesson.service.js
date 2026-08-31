@@ -1,7 +1,7 @@
 const Lesson = require("../models/Lesson");
 const LearnerProfile = require("../models/LearnerProfile");
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
+const AI_SERVICE_URL = (process.env.AI_SERVICE_URL || "http://127.0.0.1:8000").replace("localhost", "127.0.0.1");
 
 /**
  * Fetch the learner profile for a user and serialize it for the AI service.
@@ -49,12 +49,22 @@ const createLesson = async (userId, body) => {
   // Fetch learner profile from MongoDB
   const learnerProfile = await getProfilePayload(userId);
 
+  // If material_id is provided, it's the MongoDB _id. We need to fetch the ai_service_material_id for the AI service.
+  let ai_material_id = material_id;
+  if (material_id) {
+    const Material = require("../models/Material");
+    const mat = await Material.findById(material_id);
+    if (mat && mat.ai_service_material_id) {
+      ai_material_id = mat.ai_service_material_id;
+    }
+  }
+
   // Call the AI service
   const response = await fetch(`${AI_SERVICE_URL}/lessons/plan`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      material_id: material_id || null,
+      material_id: ai_material_id || null,
       topic: topic || null,
       learner_level: learner_level || (learnerProfile && learnerProfile.level) || "beginner",
       language: language || (learnerProfile && learnerProfile.preferred_language) || "en",
@@ -112,11 +122,21 @@ const previewLesson = async (userId, body) => {
   // Fetch learner profile from MongoDB
   const learnerProfile = await getProfilePayload(userId);
 
+  // If material_id is provided, it's the MongoDB _id. We need to fetch the ai_service_material_id for the AI service.
+  let ai_material_id = material_id;
+  if (material_id) {
+    const Material = require("../models/Material");
+    const mat = await Material.findById(material_id);
+    if (mat && mat.ai_service_material_id) {
+      ai_material_id = mat.ai_service_material_id;
+    }
+  }
+
   const response = await fetch(`${AI_SERVICE_URL}/lessons/plan/preview`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      material_id: material_id || null,
+      material_id: ai_material_id || null,
       topic: topic || null,
       learner_level: learner_level || (learnerProfile && learnerProfile.level) || "beginner",
       language: language || (learnerProfile && learnerProfile.preferred_language) || "en",

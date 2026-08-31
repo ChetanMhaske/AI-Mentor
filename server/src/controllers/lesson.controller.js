@@ -100,7 +100,7 @@ const evaluateAnswer = async (req, res) => {
   }
 };
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8000";
+const AI_SERVICE_URL = (process.env.AI_SERVICE_URL || "http://127.0.0.1:8000").replace("localhost", "127.0.0.1");
 
 const startAssessment = async (req, res) => {
   try {
