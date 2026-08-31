@@ -109,11 +109,11 @@ function Dashboard() {
                 No assessment data yet.
               </div>
             ) : (
-              scores.map((s, i) => {
+              [...scores].reverse().map((s, i) => {
                 const height = s.percentage;
                 const color = s.percentage >= 80 ? "bg-leaf-500" : s.percentage >= 50 ? "bg-pencil-500" : "bg-eraser-500";
                 return (
-                  <div key={i} className="flex-1 min-w-[120px] max-w-[200px] flex flex-col justify-end items-center gap-2 h-full">
+                  <div key={i} className="w-32 flex-shrink-0 flex flex-col justify-end items-center gap-2 h-full">
                     <span className="text-xs font-bold text-warm-300">{Math.round(s.percentage)}%</span>
                     <div className={`w-full rounded-t-lg ${color} transition-all duration-700 ease-out min-h-[4px]`} style={{ height: `${height}%` }} />
                     <span className="text-[10px] text-warm-500 truncate w-full text-center" title={s.topic}>{s.topic}</span>
