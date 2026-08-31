@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
-const FormData = require("form-data");
-const { protect } = require("../middlewares/auth.middleware");
+const { uploadMaterial, queryMaterial, listMaterials } = require("../controllers/material.controller");
+const auth = require("../middleware/auth");
 const Material = require("../models/Material");
 
 const router = express.Router();
