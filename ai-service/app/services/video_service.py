@@ -6,18 +6,25 @@ For hackathon MVP, mocks actual generation if keys are missing.
 import asyncio
 import logging
 import uuid
+# pyrefly: ignore [missing-import]
 import httpx
 import os
 import time
+
+logging.basicConfig(level=logging.INFO)
 from typing import Dict
+# pyrefly: ignore [missing-import]
 from gtts import gTTS
+# pyrefly: ignore [missing-import]
 from gradio_client import Client
 
 from app.models.schemas import JobStatusResponse
 from app.services import visual_service
 from app.config import settings
 
+# pyrefly: ignore [missing-import]
 from google import genai
+# pyrefly: ignore [missing-import]
 from google.genai import types
 
 logger = logging.getLogger(__name__)
@@ -42,14 +49,14 @@ async def generate_tts(script: str, job_id: str) -> str:
         logger.info(f"Attempting Gemini TTS for job {job_id}")
         client = genai.Client(api_key=settings.LLM_API_KEY)
         response = client.models.generate_content(
-            model=settings.LLM_MODEL,
+            model="gemini-2.0-flash",
             contents=script,
             config=types.GenerateContentConfig(
                 response_modalities=["AUDIO"],
                 speech_config=types.SpeechConfig(
                     voice_config=types.VoiceConfig(
                         prebuilt_voice_config=types.PrebuiltVoiceConfig(
-                            voice_name="Aoede"
+                            voice_name="Puck"
                         )
                     )
                 )
@@ -62,31 +69,66 @@ async def generate_tts(script: str, job_id: str) -> str:
                 return f"http://localhost:8000/static/{audio_filename}"
         raise ValueError("No audio returned from Gemini")
     except Exception as e:
-        logger.warning(f"Gemini TTS failed: {e}. Falling back to gTTS for job {job_id}")
+        logger.warning(f"Gemini TTS failed: {e}. Falling back to edge-tts (Male Voice) for job {job_id}")
         try:
-            tts = gTTS(text=script, lang='en')
-            tts.save(audio_path)
+            import edge_tts
+            communicate = edge_tts.Communicate(script, "en-US-GuyNeural")
+            await communicate.save(audio_path)
             return f"http://localhost:8000/static/{audio_filename}"
         except Exception as e2:
-            logger.error(f"gTTS fallback failed: {e2}")
+            logger.error(f"edge-tts fallback failed: {e2}")
             raise
 
-async def generate_avatar(audio_url: str, script: str, job_id: str) -> str | None:
-    """Attempt Wav2Lip via HuggingFace Space Gradio API. Fallback if unreachable."""
-    # Attempting to use a public SadTalker/Wav2Lip Space if possible.
-    # Since we don't have a specific instance, we'll try to hit it and catch errors.
-    try:
-        logger.info(f"Attempting Avatar generation via Hugging Face Space for job {job_id}")
-        # This is a dummy call just to show the integration architecture. 
-        # In a real environment, you'd specify a real space or local URL.
-        # client = Client("some-hf-space-url")
-        # result = client.predict(audio_file, image_file)
-        
-        # We will throw to trigger the fallback, because without a reliable API, this will just hang or fail anyway.
-        raise RuntimeError("Hosted Wav2Lip space unreachable or not configured.")
-    except Exception as e:
-        logger.warning(f"Avatar Generation Failed: {e}. LOUD FALLBACK: Serving just TTS audio + on-screen script.")
-        return None
+async def generate_avatar(audio_url: str, job_id: str) -> tuple[str | None, str]:
+    """Attempt Wav2Lip via external API. Returns (video_url, avatar_status)."""
+    if not settings.WAV2LIP_ENDPOINT_URL:
+        logger.warning("Avatar Generation Skipped: WAV2LIP_ENDPOINT_URL is not set.")
+        return None, "fallback_audio"
+
+    audio_filename = audio_url.split("/")[-1]
+    audio_path = os.path.join(STATIC_DIR, audio_filename)
+    
+    for attempt in range(2):
+        try:
+            logger.info(f"Attempting Avatar generation (Attempt {attempt+1}) via {settings.WAV2LIP_ENDPOINT_URL} for job {job_id}")
+            
+            async with httpx.AsyncClient(timeout=180.0) as client:
+                with open(audio_path, "rb") as af:
+                    files = {"audio": (audio_filename, af, "audio/mpeg")}
+                    # If endpoint needs an image, assume it provides a default or we can upload our own. 
+                    # Assuming basic `POST /` taking form-data `audio`.
+                    response = await client.post(
+                        settings.WAV2LIP_ENDPOINT_URL, 
+                        files=files,
+                        headers={"ngrok-skip-browser-warning": "1"}
+                    )
+                
+                response.raise_for_status()
+                
+                # Save the returned MP4
+                video_filename = f"avatar_{job_id}.mp4"
+                final_video_path = os.path.join(STATIC_DIR, video_filename)
+                
+                with open(final_video_path, "wb") as vf:
+                    vf.write(response.content)
+                
+                return f"http://localhost:8000/static/{video_filename}", "generated"
+                
+        except httpx.TimeoutException:
+            logger.warning(f"Wav2Lip timed out on attempt {attempt+1} for job {job_id}")
+        except httpx.RequestError as e:
+            logger.warning(f"Wav2Lip endpoint unreachable on attempt {attempt+1}: {e}")
+        except httpx.HTTPStatusError as e:
+            logger.warning(f"Wav2Lip returned error {e.response.status_code} on attempt {attempt+1}")
+        except Exception as e:
+            logger.warning(f"Wav2Lip unexpected error on attempt {attempt+1}: {e}")
+            
+        if attempt == 0:
+            logger.info("Waiting 5s before retrying Wav2Lip...")
+            await asyncio.sleep(5)
+            
+    logger.warning("LOUD FALLBACK: All Wav2Lip attempts failed. Serving just TTS audio.")
+    return None, "fallback_audio"
 
 
 async def render_video_async(
@@ -109,8 +151,10 @@ async def render_video_async(
         audio_url = await generate_tts(script, job_id)
         logger.info(f"Job {job_id} TTS complete: {audio_url}")
         
-        # Avatar Generation (fallback to None if it fails)
-        video_url = await generate_avatar(audio_url, script, job_id)
+        # Avatar Generation
+        _jobs[job_id].status = "generating_avatar"
+        video_url, avatar_status = await generate_avatar(audio_url, job_id)
+        
         if video_url:
             logger.info(f"Job {job_id} Avatar complete: {video_url}")
         else:
@@ -134,7 +178,8 @@ async def render_video_async(
                 "status": "ready",
                 "video_url": video_url,
                 "audio_url": audio_url,
-                "visual_data": visual_data
+                "visual_data": visual_data,
+                "avatar_status": avatar_status
             }, timeout=10.0)
             
             if res.status_code not in (200, 201):

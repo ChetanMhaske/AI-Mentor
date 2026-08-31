@@ -45,7 +45,7 @@ RULES:
 - VISUAL SPEC SCHEMA (Must follow based on visual_type):
   - "math": `{"latex": "<latex_equation_string>"}`
   - "code": `{"language": "<lang>", "code": "<code_snippet>"}`
-  - "diagram": `{"mermaid_code": "<mermaid_js_script>"}`
+  - "diagram": `{"mermaid_code": "<mermaid_js_script (CRITICAL: Wrap all node text containing spaces or special characters in double quotes, e.g. A[\"Array: 1, 2 | Target: 0\"])>"}`
   - "graph": `{"title": "<string>", "x_label": "<string>", "y_label": "<string>", "data": [{"x": <number>, "y": <number>}, ...]}`
 
 OUTPUT SCHEMA:

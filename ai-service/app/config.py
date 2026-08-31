@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "gemini-2.0-flash"
     TTS_API_KEY: str = ""
     AVATAR_API_KEY: str = ""
+    WAV2LIP_ENDPOINT_URL: str = ""
     VECTOR_DB_HOST: str = "localhost"
     VECTOR_DB_PORT: int = 6333
     VECTOR_DB_COLLECTION: str = "ai_mentor"

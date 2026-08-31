@@ -43,8 +43,24 @@ function LessonPlayer() {
         setLoading(false);
       }
     };
+
     fetchLesson();
-  }, [id]);
+
+    // Poll every 5 seconds if the current section is pending
+    const interval = setInterval(() => {
+      setLesson(prev => {
+        if (prev && prev.plan && prev.plan.sections) {
+          const section = prev.plan.sections[currentSectionIndex];
+          if (section && section.render_status === "pending") {
+            fetchLesson();
+          }
+        }
+        return prev;
+      });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [id, currentSectionIndex]);
 
   if (loading) {
     return (
@@ -130,13 +146,24 @@ function LessonPlayer() {
           <div className="flex-1 flex items-center justify-center relative min-h-[300px]">
             {currentSection?.render_status === "ready" && currentSection?.video_url ? (
               <video src={currentSection.video_url} controls autoPlay onEnded={handleMediaEnded} className="w-full h-full object-contain" />
+            ) : currentSection?.render_status === "ready" && currentSection?.audio_url ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative w-full h-full">
+                {currentSection?.avatar_status === "fallback_audio" && (
+                  <div className="absolute top-4 right-4 px-3 py-1 bg-warm-800/80 text-warm-300 text-xs font-semibold rounded-full border border-warm-700">
+                    Audio-only mode
+                  </div>
+                )}
+                <audio src={currentSection.audio_url} controls autoPlay onEnded={handleMediaEnded} className="mb-6" />
+                <PlayCircle className="w-12 h-12 text-warm-600 mb-4" />
+                <p className="text-warm-500 text-sm">Avatar unavailable</p>
+              </div>
             ) : currentSection?.render_status === "failed" ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                 {currentSection?.audio_url && (
                   <audio src={currentSection.audio_url} controls onEnded={handleMediaEnded} className="mb-6" />
                 )}
                 <PlayCircle className="w-12 h-12 text-warm-600 mb-4" />
-                <p className="text-warm-500 text-sm">Avatar rendering unavailable</p>
+                <p className="text-warm-500 text-sm">Avatar rendering failed</p>
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center p-8">

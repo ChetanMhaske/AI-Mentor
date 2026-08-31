@@ -105,6 +105,23 @@ const createLesson = async (userId, body) => {
     createdBy: userId,
   });
 
+  // Trigger background rendering for each section
+  if (plan.sections) {
+    plan.sections.forEach((section, index) => {
+      fetch(`${AI_SERVICE_URL}/lessons/${lesson._id}/render`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lesson_id: lesson._id.toString(),
+          section_index: index,
+          explanation_script: section.explanation_script,
+          visual_type: section.visual_type || "none",
+          visual_spec: section.visual_spec || {}
+        }),
+      }).catch(err => console.error(`[LessonService] Failed to queue render for section ${index}:`, err));
+    });
+  }
+
   return lesson;
 };
 
@@ -241,7 +258,7 @@ const updateSectionVideo = async (lessonId, sectionIndex, videoData) => {
   const lesson = await Lesson.findById(lessonId);
   if (!lesson) throw new Error("Lesson not found");
 
-  const { status, video_url, audio_url, visual_data, error } = videoData;
+  const { status, video_url, audio_url, visual_data, avatar_status, error } = videoData;
 
   let plan = lesson.plan;
   if (!plan || !plan.sections || sectionIndex < 0 || sectionIndex >= plan.sections.length) {
@@ -252,6 +269,7 @@ const updateSectionVideo = async (lessonId, sectionIndex, videoData) => {
   if (video_url) plan.sections[sectionIndex].video_url = video_url;
   if (audio_url) plan.sections[sectionIndex].audio_url = audio_url;
   if (visual_data) plan.sections[sectionIndex].visual_data = visual_data;
+  if (avatar_status) plan.sections[sectionIndex].avatar_status = avatar_status;
   if (error) plan.sections[sectionIndex].error = error;
 
   lesson.markModified("plan");
