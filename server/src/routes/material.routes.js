@@ -1,6 +1,6 @@
 const express = require("express");
 const multer = require("multer");
-const { uploadMaterial, queryMaterial, listMaterials } = require("../controllers/material.controller");
+const FormData = require("form-data");
 const auth = require("../middleware/auth");
 const Material = require("../models/Material");
 
@@ -10,7 +10,7 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Endpoint POST /api/materials/upload
-router.post("/upload", protect, upload.single("file"), async (req, res) => {
+router.post("/upload", auth, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: "No file uploaded" });
@@ -60,7 +60,7 @@ router.post("/upload", protect, upload.single("file"), async (req, res) => {
 });
 
 // Endpoint GET /api/materials
-router.get("/", protect, async (req, res) => {
+router.get("/", auth, async (req, res) => {
   try {
     const materials = await Material.find({ user: req.user.id }).sort("-createdAt");
     res.json({ success: true, materials });
