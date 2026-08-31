@@ -12,10 +12,11 @@ from app.models.schemas import (
     LessonPlanResponse,
     PreviewResponse,
     SwitchLanguageRequest,
-    SwitchLanguageResponse,
     RenderRequest,
     RenderResponse,
     JobStatusResponse,
+    AnswerEvaluationRequest,
+    AnswerEvaluationResponse,
 )
 from app.services import llm_service, rag_service, video_service
 
@@ -146,3 +147,22 @@ async def get_render_status(lesson_id: str, job_id: str):
         raise HTTPException(status_code=404, detail="Job not found")
         
     return status
+
+
+@router.post("/evaluate-answer", response_model=AnswerEvaluationResponse)
+async def evaluate_answer(request: AnswerEvaluationRequest):
+    """
+    Evaluate a student's answer to a checkpoint question.
+    Returns whether they were correct, and if not, identifies the misconception
+    and provides a targeted re-explanation and follow-up question.
+    """
+    try:
+        evaluation = await llm_service.evaluate_answer(request)
+    except Exception as exc:
+        logger.exception("Answer evaluation failed")
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM evaluation failed: {exc}",
+        )
+
+    return evaluation

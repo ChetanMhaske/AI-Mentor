@@ -199,3 +199,23 @@ class JobStatusResponse(BaseModel):
     audio_url: str | None = None
     visual_data: dict | None = None
     error: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# Answer Evaluation
+# ---------------------------------------------------------------------------
+
+class AnswerEvaluationRequest(BaseModel):
+    lesson_id: str
+    section_index: int
+    section_script: str
+    question: str
+    options: list[str] = []
+    student_answer: str
+
+class AnswerEvaluationResponse(BaseModel):
+    is_correct: bool
+    decision: str
+    misconception: str | None = None
+    re_explanation: str | None = None
+    follow_up_question: CheckpointQuestion | None = None

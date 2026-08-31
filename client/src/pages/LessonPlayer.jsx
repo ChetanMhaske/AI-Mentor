@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, PlayCircle, SkipForward, SkipBack, Loader2 } from "lucide-react";
+import { ArrowLeft, PlayCircle, SkipForward, SkipBack, Loader2, HelpCircle } from "lucide-react";
 import VisualRenderer from "../components/VisualRenderer";
+import CheckpointOverlay from "../components/CheckpointOverlay";
 
 function LessonPlayer() {
   const { id } = useParams();
@@ -10,6 +11,11 @@ function LessonPlayer() {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const [showCheckpoint, setShowCheckpoint] = useState(false);
+  const [evalLoading, setEvalLoading] = useState(false);
+  const [evaluationResult, setEvaluationResult] = useState(null);
+  const [currentQuestion, setCurrentQuestion] = useState(null);
 
   // In a real app, you would fetch from the backend:
   // /api/lessons/:id
@@ -53,6 +59,60 @@ function LessonPlayer() {
   const sections = lesson.plan.sections || [];
   const currentSection = sections[currentSectionIndex];
 
+  // Reset checkpoint state when section changes
+  useEffect(() => {
+    setShowCheckpoint(false);
+    setEvaluationResult(null);
+    setCurrentQuestion(currentSection?.checkpoint_question || null);
+  }, [currentSectionIndex, currentSection]);
+
+  const handleMediaEnded = () => {
+    if (currentQuestion) {
+      setShowCheckpoint(true);
+    }
+  };
+
+  const handleAnswerSubmit = async (answer) => {
+    setEvalLoading(true);
+    try {
+      const res = await fetch(`/api/lessons/${id}/answer`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify({
+          sectionIndex: currentSectionIndex,
+          question: currentQuestion.question,
+          options: currentQuestion.options,
+          studentAnswer: answer
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to evaluate answer");
+      const data = await res.json();
+      setEvaluationResult(data.evaluation);
+    } catch (err) {
+      alert("Error evaluating answer: " + err.message);
+    } finally {
+      setEvalLoading(false);
+    }
+  };
+
+  const handleContinue = () => {
+    if (evaluationResult?.decision === "reinforce" && evaluationResult?.follow_up_question) {
+      // Show the follow up question
+      setCurrentQuestion(evaluationResult.follow_up_question);
+      setEvaluationResult(null);
+    } else {
+      // Passed! Proceed to next section or hide checkpoint
+      setShowCheckpoint(false);
+      if (currentSectionIndex < sections.length - 1) {
+        setCurrentSectionIndex(currentSectionIndex + 1);
+      }
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto flex flex-col h-full">
       {/* Header */}
@@ -81,7 +141,7 @@ function LessonPlayer() {
             {/* PIP Video Overlay */}
             <div className="absolute bottom-4 right-4 w-64 aspect-video bg-black rounded-lg shadow-2xl border border-gray-700 overflow-hidden z-10">
               {currentSection.render_status === "ready" && currentSection.video_url ? (
-                <video src={currentSection.video_url} controls autoPlay className="w-full h-full object-cover" />
+                <video src={currentSection.video_url} controls autoPlay onEnded={handleMediaEnded} className="w-full h-full object-cover" />
               ) : currentSection.render_status === "failed" ? (
                  <div className="flex items-center justify-center w-full h-full text-xs text-red-400 p-2 text-center bg-gray-900">
                    Avatar Failed
@@ -97,12 +157,12 @@ function LessonPlayer() {
         ) : (
           <div className="w-full h-full flex flex-col relative">
             {currentSection.render_status === "ready" && currentSection.video_url ? (
-              <video src={currentSection.video_url} controls autoPlay className="w-full h-full object-cover" />
+              <video src={currentSection.video_url} controls autoPlay onEnded={handleMediaEnded} className="w-full h-full object-cover" />
             ) : currentSection.render_status === "failed" ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                 <h3 className="text-xl font-bold text-white mb-4">{currentSection.section_title}</h3>
                 <p className="text-gray-400 max-w-2xl text-lg leading-relaxed">{currentSection.explanation_script}</p>
-                {currentSection.audio_url && <audio src={currentSection.audio_url} controls className="mt-8" />}
+                {currentSection.audio_url && <audio src={currentSection.audio_url} controls onEnded={handleMediaEnded} className="mt-8" />}
               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-8">
@@ -111,6 +171,16 @@ function LessonPlayer() {
               </div>
             )}
           </div>
+        )}
+
+        {showCheckpoint && currentQuestion && (
+          <CheckpointOverlay 
+            question={currentQuestion}
+            onSubmit={handleAnswerSubmit}
+            evaluationResult={evaluationResult}
+            loading={evalLoading}
+            onContinue={handleContinue}
+          />
         )}
       </div>
 
@@ -133,13 +203,24 @@ function LessonPlayer() {
           ))}
         </div>
 
-        <button 
-          onClick={() => setCurrentSectionIndex(Math.min(sections.length - 1, currentSectionIndex + 1))}
-          disabled={currentSectionIndex === sections.length - 1}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
-        >
-          Next <SkipForward className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {currentQuestion && (
+            <button
+              onClick={() => setShowCheckpoint(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-amber-500 hover:text-amber-400 transition-colors"
+            >
+              <HelpCircle className="w-4 h-4" /> Take Checkpoint
+            </button>
+          )}
+
+          <button 
+            onClick={() => setCurrentSectionIndex(Math.min(sections.length - 1, currentSectionIndex + 1))}
+            disabled={currentSectionIndex === sections.length - 1 || (currentQuestion && !evaluationResult?.is_correct)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-400 hover:text-indigo-300 disabled:opacity-50 transition-colors"
+          >
+            Next <SkipForward className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

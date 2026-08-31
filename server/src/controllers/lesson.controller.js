@@ -126,4 +126,46 @@ const updateSectionVideo = async (req, res) => {
   }
 };
 
-module.exports = { create, preview, list, getById, switchLanguage, updateSectionVideo };
+const evaluateAnswer = async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1 && req.params.id.startsWith("mock-")) {
+      // Mock logic for UI testing without DB
+      const { studentAnswer } = req.body;
+      const isCorrect = studentAnswer === "mock_correct" || studentAnswer === "1"; 
+      return res.json({
+        evaluation: {
+          is_correct: isCorrect,
+          decision: isCorrect ? "continue" : "reinforce",
+          misconception: isCorrect ? null : "You confused current with voltage.",
+          re_explanation: isCorrect ? null : "Think of voltage as the pressure pushing the water, and current as the flow of water itself.",
+          follow_up_question: isCorrect ? null : {
+            question: "If water pressure increases, does the flow increase?",
+            options: ["Yes", "No"],
+            correct_answer_index: 0,
+            explanation: "Yes, more pressure means more flow."
+          }
+        }
+      });
+    }
+
+    const { sectionIndex, question, options, studentAnswer } = req.body;
+    if (sectionIndex === undefined || !question || !studentAnswer) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const evaluation = await lessonService.evaluateAnswer(
+      req.params.id,
+      req.user._id,
+      sectionIndex,
+      question,
+      options,
+      studentAnswer
+    );
+    res.json({ evaluation });
+  } catch (err) {
+    console.error("Error evaluating answer:", err);
+    res.status(502).json({ message: err.message });
+  }
+};
+
+module.exports = { create, preview, list, getById, switchLanguage, updateSectionVideo, evaluateAnswer };

@@ -237,4 +237,60 @@ const updateSectionVideo = async (lessonId, sectionIndex, videoData) => {
   return lesson;
 };
 
-module.exports = { createLesson, previewLesson, getUserLessons, getLessonById, switchSectionLanguage, updateSectionVideo };
+const Session = require("../models/Session");
+
+/**
+ * Evaluate student answer by calling AI Service, and log interaction in Session.
+ */
+const evaluateAnswer = async (lessonId, userId, sectionIndex, question, options, studentAnswer) => {
+  const lesson = await Lesson.findOne({ _id: lessonId, createdBy: userId }).lean();
+  if (!lesson) throw new Error("Lesson not found");
+
+  const plan = lesson.plan;
+  if (!plan || !plan.sections || sectionIndex < 0 || sectionIndex >= plan.sections.length) {
+    throw new Error("Invalid section index");
+  }
+
+  const section = plan.sections[sectionIndex];
+
+  // Call AI Service
+  const response = await fetch(`${AI_SERVICE_URL}/lessons/evaluate-answer`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      lesson_id: lessonId,
+      section_index: sectionIndex,
+      section_script: section.explanation_script,
+      question,
+      options: options || [],
+      student_answer: studentAnswer,
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.detail || `AI service returned ${response.status}`);
+  }
+
+  const evaluation = await response.json();
+
+  // Log in Session
+  let session = await Session.findOne({ user: userId, lesson: lessonId, status: "active" });
+  if (!session) {
+    session = new Session({ user: userId, lesson: lessonId, status: "active" });
+  }
+
+  session.interactions.push({
+    sectionIndex,
+    question,
+    answer: studentAnswer,
+    isCorrect: evaluation.is_correct,
+    misconception: evaluation.misconception,
+  });
+
+  await session.save();
+
+  return evaluation;
+};
+
+module.exports = { createLesson, previewLesson, getUserLessons, getLessonById, switchSectionLanguage, updateSectionVideo, evaluateAnswer };

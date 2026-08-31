@@ -7,6 +7,16 @@ const sessionSchema = new mongoose.Schema(
     startedAt: { type: Date, default: Date.now },
     endedAt: { type: Date },
     status: { type: String, enum: ["active", "completed", "abandoned"], default: "active" },
+    interactions: [
+      {
+        sectionIndex: { type: Number },
+        question: { type: String },
+        answer: { type: String },
+        isCorrect: { type: Boolean },
+        misconception: { type: String },
+        timestamp: { type: Date, default: Date.now }
+      }
+    ],
     notes: { type: String },
   },
   { timestamps: true }

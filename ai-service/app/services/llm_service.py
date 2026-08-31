@@ -17,6 +17,8 @@ from app.models.schemas import (
     MultiDayLessonPlan,
     SwitchLanguageRequest,
     Section,
+    AnswerEvaluationRequest,
+    AnswerEvaluationResponse,
 )
 from prompts.lesson_planning import (
     SYSTEM_PROMPT_BASE,
@@ -24,6 +26,7 @@ from prompts.lesson_planning import (
     RAG_GROUNDING_BLOCK,
     PREVIEW_SYSTEM_PROMPT,
     SECTION_TRANSLATION_PROMPT,
+    EVALUATION_PROMPT,
     build_learner_profile_block,
     build_user_message,
 )
@@ -205,3 +208,32 @@ async def translate_lesson_section(request: SwitchLanguageRequest) -> Section:
 
     translated_section = Section.model_validate(data)
     return translated_section
+
+
+async def evaluate_answer(request: AnswerEvaluationRequest) -> AnswerEvaluationResponse:
+    """Evaluate a student's answer to a checkpoint question."""
+    client = _get_client()
+
+    prompt = EVALUATION_PROMPT.format(
+        section_script=request.section_script,
+        question=request.question,
+        options=json.dumps(request.options),
+        student_answer=request.student_answer,
+    )
+
+    logger.info("Evaluating answer for lesson %s, section %d", request.lesson_id, request.section_index)
+
+    response = client.models.generate_content(
+        model=settings.LLM_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.6,
+        ),
+    )
+
+    raw_text = response.text
+    data = json.loads(raw_text)
+
+    evaluation = AnswerEvaluationResponse.model_validate(data)
+    return evaluation

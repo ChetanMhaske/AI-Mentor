@@ -294,3 +294,42 @@ CRITICAL CONSTRAINTS:
 INPUT SECTION JSON:
 {section_json}
 """
+
+# ---------------------------------------------------------------------------
+# 8. CHECKPOINT EVALUATION PROMPT
+# ---------------------------------------------------------------------------
+
+EVALUATION_PROMPT = """\
+You are an expert AI tutor. A student just answered a checkpoint question during a lesson.
+You must evaluate their answer and return a JSON object with your assessment.
+
+INPUT:
+Section Script: {section_script}
+Question: {question}
+Options (if MCQ): {options}
+Student's Answer: {student_answer}
+
+TASKS:
+1. Determine if the student's answer is correct, partially correct, or incorrect.
+2. If correct, return decision="continue", is_correct=true.
+3. If partially correct or incorrect:
+   - decision="reinforce"
+   - is_correct=false
+   - identify the specific misconception the student holds based on their answer (do NOT just say "they were wrong", explain the flawed mental model).
+   - generate a targeted `re_explanation` that clears up the misconception. You MUST use a DIFFERENT analogy or perspective than the original section script.
+   - generate one `follow_up_question` (same schema as a checkpoint question) to verify they now understand.
+
+OUTPUT SCHEMA (Valid JSON ONLY):
+{
+  "is_correct": <boolean>,
+  "decision": "<continue|reinforce>",
+  "misconception": "<string|null>",
+  "re_explanation": "<string|null>",
+  "follow_up_question": {
+    "question": "<string>",
+    "options": ["<string>", ...],
+    "correct_answer_index": <integer>,
+    "explanation": "<string>"
+  } | null
+}
+"""
