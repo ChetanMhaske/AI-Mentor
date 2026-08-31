@@ -103,7 +103,7 @@ function Dashboard() {
             <TrendingUp className="w-5 h-5 text-pencil-400" />
             Performance Over Time
           </h2>
-          <div className="flex items-stretch gap-3 h-40 px-2">
+          <div className="flex items-stretch gap-4 h-48 px-2 overflow-x-auto pb-2 custom-scrollbar">
             {scores.length === 0 ? (
               <div className="w-full h-full flex items-center justify-center text-warm-500 text-sm">
                 No assessment data yet.
@@ -113,14 +113,9 @@ function Dashboard() {
                 const height = s.percentage;
                 const color = s.percentage >= 80 ? "bg-leaf-500" : s.percentage >= 50 ? "bg-pencil-500" : "bg-eraser-500";
                 return (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-2 h-full">
+                  <div key={i} className="flex-1 min-w-[120px] max-w-[200px] flex flex-col justify-end items-center gap-2 h-full">
                     <span className="text-xs font-bold text-warm-300">{Math.round(s.percentage)}%</span>
-                    
-                    {/* The bar container stretches to fill available vertical space */}
-                    <div className="w-full flex-1 flex items-end">
-                      <div className={`w-full rounded-t-lg ${color} transition-all duration-700 ease-out min-h-[4px]`} style={{ height: `${height}%` }} />
-                    </div>
-                    
+                    <div className={`w-full rounded-t-lg ${color} transition-all duration-700 ease-out min-h-[4px]`} style={{ height: `${height}%` }} />
                     <span className="text-[10px] text-warm-500 truncate w-full text-center" title={s.topic}>{s.topic}</span>
                   </div>
                 );
