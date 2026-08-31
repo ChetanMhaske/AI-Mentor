@@ -60,6 +60,7 @@ OUTPUT SCHEMA:
       "examples": ["<string>", ...],
       "visual_type": "<diagram|graph|code|math|none>",
       "visual_spec": {<optional object describing the visual>},
+      "citations": [{"source": "<string>", "chunk_index": <integer>}],
       "checkpoint_question": {
         "question": "<string>",
         "options": ["<string>", ...],
@@ -123,6 +124,11 @@ relevant chunks retrieved from that material.  You MUST ground the lesson
 in this content — use these excerpts as the primary source of truth for
 explanations, examples, and questions.  You may supplement with your own
 knowledge only to fill gaps.
+
+GROUNDING CHECK:
+Whenever you draw information from these chunks for a section, you MUST
+include a citation in that section's "citations" array. Use the provided
+source filename and chunk index.
 
 --- BEGIN MATERIAL EXCERPTS ---
 {chunks}

@@ -79,15 +79,18 @@ class CheckpointQuestion(BaseModel):
     explanation: str
 
 
+class Citation(BaseModel):
+    source: str
+    chunk_index: int
+
+
 class Section(BaseModel):
     section_title: str
     explanation_script: str
     examples: list[str] = []
-    visual_type: str = Field(
-        default="none",
-        description="diagram, graph, code, math, or none",
-    )
+    visual_type: Literal["diagram", "graph", "code", "math", "none"] = "none"
     visual_spec: dict | None = None
+    citations: list[Citation] = []
     visual_data: dict | None = Field(default=None, description="Rendered visual output (URL, execution output)")
     checkpoint_question: CheckpointQuestion | None = None
     video_url: str | None = None
