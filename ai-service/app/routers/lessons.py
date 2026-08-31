@@ -52,7 +52,8 @@ async def create_lesson_plan(request: LessonPlanRequest):
     grounded = False
 
     if request.material_id:
-        context_chunks = await rag_service.retrieve_chunks(request.material_id)
+        query = request.topic or request.learning_objective
+        context_chunks = await rag_service.retrieve_chunks(request.material_id, query=query)
         grounded = len(context_chunks) > 0
 
     try:

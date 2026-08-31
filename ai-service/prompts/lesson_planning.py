@@ -326,18 +326,18 @@ TASKS:
    - generate one `follow_up_question` (same schema as a checkpoint question) to verify they now understand.
 
 OUTPUT SCHEMA (Valid JSON ONLY):
-{
+{{
   "is_correct": <boolean>,
   "decision": "<continue|reinforce>",
   "misconception": "<string|null>",
   "re_explanation": "<string|null>",
-  "follow_up_question": {
+  "follow_up_question": {{
     "question": "<string>",
     "options": ["<string>", ...],
     "correct_answer_index": <integer>,
     "explanation": "<string>"
-  } | null
-}
+  }} | null
+}}
 """
 
 # ---------------------------------------------------------------------------
