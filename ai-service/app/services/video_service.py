@@ -10,6 +10,7 @@ import httpx
 from typing import Dict
 
 from app.models.schemas import JobStatusResponse
+from app.services import visual_service
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +29,9 @@ async def render_video_async(
     job_id: str,
     lesson_id: str,
     section_index: int,
-    script: str
+    script: str,
+    visual_type: str = "none",
+    visual_spec: dict | None = None
 ):
     """
     Background task to generate TTS audio and Avatar video, then notify Node server.
@@ -48,10 +51,15 @@ async def render_video_async(
         mock_video_url = f"https://mock-storage.example.com/video/{job_id}.mp4"
         logger.info(f"Job {job_id} Avatar complete: {mock_video_url}")
 
+        # Generate Visuals
+        visual_data = visual_service.generate_visual(visual_type, visual_spec)
+        logger.info(f"Job {job_id} Visual complete: {visual_data}")
+
         # Update local status
         _jobs[job_id].status = "ready"
         _jobs[job_id].video_url = mock_video_url
         _jobs[job_id].audio_url = mock_audio_url
+        _jobs[job_id].visual_data = visual_data
 
         # Notify Node Server via callback
         callback_url = f"{NODE_SERVER_URL}/api/lessons/{lesson_id}/section/{section_index}/video-ready"
@@ -60,7 +68,8 @@ async def render_video_async(
             res = await client.post(callback_url, json={
                 "status": "ready",
                 "video_url": mock_video_url,
-                "audio_url": mock_audio_url
+                "audio_url": mock_audio_url,
+                "visual_data": visual_data
             })
             
             if res.status_code not in (200, 201):

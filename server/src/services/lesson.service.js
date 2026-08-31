@@ -218,7 +218,7 @@ const updateSectionVideo = async (lessonId, sectionIndex, videoData) => {
   const lesson = await Lesson.findById(lessonId);
   if (!lesson) throw new Error("Lesson not found");
 
-  const { status, video_url, audio_url, error } = videoData;
+  const { status, video_url, audio_url, visual_data, error } = videoData;
 
   let plan = lesson.plan;
   if (!plan || !plan.sections || sectionIndex < 0 || sectionIndex >= plan.sections.length) {
@@ -228,6 +228,7 @@ const updateSectionVideo = async (lessonId, sectionIndex, videoData) => {
   plan.sections[sectionIndex].render_status = status;
   if (video_url) plan.sections[sectionIndex].video_url = video_url;
   if (audio_url) plan.sections[sectionIndex].audio_url = audio_url;
+  if (visual_data) plan.sections[sectionIndex].visual_data = visual_data;
   if (error) plan.sections[sectionIndex].error = error;
 
   lesson.markModified("plan");

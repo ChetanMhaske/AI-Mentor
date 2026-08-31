@@ -1,0 +1,92 @@
+.visual-renderer-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+}
+
+.visual-placeholder {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.visual-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.mermaid-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 1rem;
+  background-color: white; /* Mermaid usually looks best on white/light backgrounds */
+}
+
+/* Code Execution Styling */
+.code-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9rem;
+}
+
+.code-editor, .code-output {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+.code-editor {
+  border-bottom: 1px solid #333;
+}
+
+.code-header, .output-header {
+  background-color: #2d2d2d;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: #9cdcfe;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #1e1e1e;
+}
+
+.output-header {
+  color: #ce9178;
+}
+
+.code-container pre {
+  margin: 0;
+  padding: 1rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.error {
+  color: #f14c4c;
+  padding: 1rem;
+  text-align: center;
+}

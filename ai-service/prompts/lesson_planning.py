@@ -36,6 +36,17 @@ RULES:
 - CRITICAL CONSTRAINT: Keep technical terms, formulas, code snippets, and
   proper nouns in their original language (usually English) unless there is
   a universally accepted translation.
+- VISUAL SELECTION: Select visual_type based on the subject matter:
+  - Mathematics / Physics: Use "math".
+  - Programming / CS: Use "code".
+  - Biology / Processes / Workflows: Use "diagram".
+  - Data / Trends / Statistics: Use "graph".
+  - Otherwise use "none".
+- VISUAL SPEC SCHEMA (Must follow based on visual_type):
+  - "math": `{"latex": "<latex_equation_string>"}`
+  - "code": `{"language": "<lang>", "code": "<code_snippet>"}`
+  - "diagram": `{"mermaid_code": "<mermaid_js_script>"}`
+  - "graph": `{"title": "<string>", "x_label": "<string>", "y_label": "<string>", "data": [{"x": <number>, "y": <number>}, ...]}`
 
 OUTPUT SCHEMA:
 {
@@ -47,7 +58,7 @@ OUTPUT SCHEMA:
       "section_title": "<string>",
       "explanation_script": "<string — the tutor's spoken explanation>",
       "examples": ["<string>", ...],
-      "visual_type": "<diagram|graph|code|image|none>",
+      "visual_type": "<diagram|graph|code|math|none>",
       "visual_spec": {<optional object describing the visual>},
       "checkpoint_question": {
         "question": "<string>",

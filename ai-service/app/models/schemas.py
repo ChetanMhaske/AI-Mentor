@@ -85,9 +85,10 @@ class Section(BaseModel):
     examples: list[str] = []
     visual_type: str = Field(
         default="none",
-        description="diagram, graph, code, image, or none",
+        description="diagram, graph, code, math, or none",
     )
     visual_spec: dict | None = None
+    visual_data: dict | None = Field(default=None, description="Rendered visual output (URL, execution output)")
     checkpoint_question: CheckpointQuestion | None = None
     video_url: str | None = None
     audio_url: str | None = None
@@ -179,6 +180,8 @@ class RenderRequest(BaseModel):
     lesson_id: str
     section_index: int
     explanation_script: str
+    visual_type: str = "none"
+    visual_spec: dict | None = None
 
 
 class RenderResponse(BaseModel):
@@ -194,4 +197,5 @@ class JobStatusResponse(BaseModel):
     status: str
     video_url: str | None = None
     audio_url: str | None = None
+    visual_data: dict | None = None
     error: str | None = None

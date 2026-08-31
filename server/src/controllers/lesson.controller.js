@@ -69,6 +69,9 @@ const getById = async (req, res) => {
                 render_status: "ready",
                 video_url: "https://www.w3schools.com/html/mov_bbb.mp4",
                 audio_url: null,
+                visual_type: "diagram",
+                visual_spec: { mermaid_code: "graph TD;\n A-->B;\n A-->C;\n B-->D;\n C-->D;" },
+                visual_data: { mermaid_code: "graph TD;\n A-->B;\n A-->C;\n B-->D;\n C-->D;" }
               },
               {
                 section_title: "Deep Dive",
@@ -76,6 +79,9 @@ const getById = async (req, res) => {
                 render_status: "failed",
                 video_url: null,
                 audio_url: "https://www.w3schools.com/html/horse.mp3",
+                visual_type: "code",
+                visual_spec: { language: "python", code: "print('Hello World')" },
+                visual_data: { code: "print('Hello World')", output: "Hello World" }
               }
             ]
           }
