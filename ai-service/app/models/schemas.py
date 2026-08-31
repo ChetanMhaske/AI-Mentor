@@ -222,3 +222,40 @@ class AnswerEvaluationResponse(BaseModel):
     misconception: str | None = None
     re_explanation: str | None = None
     follow_up_question: CheckpointQuestion | None = None
+
+
+# ---------------------------------------------------------------------------
+# Assessment Grading
+# ---------------------------------------------------------------------------
+
+class StudentAnswer(BaseModel):
+    question_index: int
+    question: str
+    options: list[str] = []
+    student_answer: str
+
+class AssessmentSubmission(BaseModel):
+    lesson_id: str
+    lesson_title: str
+    lesson_topic: str
+    answers: list[StudentAnswer]
+    questions: list[AssessmentQuestion]
+
+class GradedAnswer(BaseModel):
+    question_index: int
+    question: str
+    student_answer: str
+    correct_answer: str
+    is_correct: bool
+    explanation: str
+
+class AssessmentReport(BaseModel):
+    score: int
+    max_score: int
+    percentage: float
+    strong_concepts: list[str]
+    weak_concepts: list[str]
+    incorrect_concepts: list[str]
+    recommended_revision: list[str]
+    suggested_next_topic: str
+    graded_answers: list[GradedAnswer]

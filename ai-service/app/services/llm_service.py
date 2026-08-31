@@ -19,6 +19,8 @@ from app.models.schemas import (
     Section,
     AnswerEvaluationRequest,
     AnswerEvaluationResponse,
+    AssessmentSubmission,
+    AssessmentReport,
 )
 from prompts.lesson_planning import (
     SYSTEM_PROMPT_BASE,
@@ -27,6 +29,7 @@ from prompts.lesson_planning import (
     PREVIEW_SYSTEM_PROMPT,
     SECTION_TRANSLATION_PROMPT,
     EVALUATION_PROMPT,
+    ASSESSMENT_GRADING_PROMPT,
     build_learner_profile_block,
     build_user_message,
 )
@@ -237,3 +240,48 @@ async def evaluate_answer(request: AnswerEvaluationRequest) -> AnswerEvaluationR
 
     evaluation = AnswerEvaluationResponse.model_validate(data)
     return evaluation
+
+
+async def grade_assessment(submission: AssessmentSubmission) -> AssessmentReport:
+    """Grade all assessment answers and produce a full report."""
+    client = _get_client()
+
+    # Build Q&A pairs string for the prompt
+    qa_lines = []
+    for ans in submission.answers:
+        q = submission.questions[ans.question_index] if ans.question_index < len(submission.questions) else None
+        correct_option = ""
+        if q and q.options and q.correct_answer_index < len(q.options):
+            correct_option = q.options[q.correct_answer_index]
+
+        qa_lines.append(
+            f"Q{ans.question_index + 1}: {ans.question}\n"
+            f"  Options: {json.dumps(ans.options)}\n"
+            f"  Correct Answer: {correct_option}\n"
+            f"  Student Answer: {ans.student_answer}"
+        )
+
+    qa_pairs_str = "\n\n".join(qa_lines)
+
+    prompt = ASSESSMENT_GRADING_PROMPT.format(
+        lesson_title=submission.lesson_title,
+        lesson_topic=submission.lesson_topic,
+        qa_pairs=qa_pairs_str,
+    )
+
+    logger.info("Grading assessment for lesson %s", submission.lesson_id)
+
+    response = client.models.generate_content(
+        model=settings.LLM_MODEL,
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json",
+            temperature=0.4,
+        ),
+    )
+
+    raw_text = response.text
+    data = json.loads(raw_text)
+
+    report = AssessmentReport.model_validate(data)
+    return report

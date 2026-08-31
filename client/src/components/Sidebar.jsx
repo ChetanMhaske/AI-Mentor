@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { LayoutDashboard, UploadCloud, BookOpen, BrainCircuit } from "lucide-react";
+import { LayoutDashboard, UploadCloud, BookOpen, BrainCircuit, BarChart3 } from "lucide-react";
 
 const links = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/upload", label: "Upload", icon: UploadCloud },
   { to: "/lesson", label: "Lessons", icon: BookOpen },
+  { to: "/progress", label: "Progress", icon: BarChart3 },
 ];
 
 function Sidebar() {

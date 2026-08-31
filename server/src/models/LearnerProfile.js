@@ -10,6 +10,21 @@ const pastScoreSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const learningHistorySchema = new mongoose.Schema(
+  {
+    lesson: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson" },
+    topic: { type: String },
+    score: { type: Number },
+    maxScore: { type: Number },
+    percentage: { type: Number },
+    strongConcepts: [{ type: String }],
+    weakConcepts: [{ type: String }],
+    suggestedNextTopic: { type: String },
+    completedAt: { type: Date, default: Date.now },
+  },
+  { _id: false }
+);
+
 const learnerProfileSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
@@ -21,6 +36,7 @@ const learnerProfileSchema = new mongoose.Schema(
     weakConcepts: [{ type: String }],
     strongConcepts: [{ type: String }],
     pastScores: [pastScoreSchema],
+    learningHistory: [learningHistorySchema],
   },
   { timestamps: true }
 );

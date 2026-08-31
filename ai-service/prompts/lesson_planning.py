@@ -339,3 +339,51 @@ OUTPUT SCHEMA (Valid JSON ONLY):
   } | null
 }
 """
+
+# ---------------------------------------------------------------------------
+# 9. ASSESSMENT GRADING PROMPT — end-of-lesson report generation
+# ---------------------------------------------------------------------------
+
+ASSESSMENT_GRADING_PROMPT = """\
+You are an expert AI tutor grading a student's end-of-lesson assessment.
+
+LESSON CONTEXT:
+Title: {lesson_title}
+Topic: {lesson_topic}
+
+QUESTIONS AND STUDENT ANSWERS:
+{qa_pairs}
+
+TASKS:
+1. Grade each answer:
+   - For MCQ: compare student_answer against the correct option (given by correct_answer_index).
+   - For open-ended/short-answer: use your expertise to judge correctness. Be generous for partially correct answers.
+2. Identify concepts the student is strong in (answered correctly and showed understanding).
+3. Identify concepts the student is weak in (answered incorrectly or showed partial understanding).
+4. List specific incorrect concepts/misconceptions.
+5. Recommend specific topics or areas for revision.
+6. Suggest a logical next topic the student should study based on this lesson and their performance.
+
+OUTPUT SCHEMA (Valid JSON ONLY):
+{{
+  "score": <number of correct answers>,
+  "max_score": <total number of questions>,
+  "percentage": <score/max_score * 100, rounded to 1 decimal>,
+  "strong_concepts": ["<concept>", ...],
+  "weak_concepts": ["<concept>", ...],
+  "incorrect_concepts": ["<specific misconception or wrong idea>", ...],
+  "recommended_revision": ["<topic to revise>", ...],
+  "suggested_next_topic": "<string>",
+  "graded_answers": [
+    {{
+      "question_index": <integer>,
+      "question": "<string>",
+      "student_answer": "<string>",
+      "correct_answer": "<string>",
+      "is_correct": <boolean>,
+      "explanation": "<brief explanation of why correct/incorrect>"
+    }}
+  ]
+}}
+"""
+

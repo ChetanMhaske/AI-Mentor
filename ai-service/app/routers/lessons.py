@@ -17,6 +17,8 @@ from app.models.schemas import (
     JobStatusResponse,
     AnswerEvaluationRequest,
     AnswerEvaluationResponse,
+    AssessmentSubmission,
+    AssessmentReport,
 )
 from app.services import llm_service, rag_service, video_service
 
@@ -166,3 +168,21 @@ async def evaluate_answer(request: AnswerEvaluationRequest):
         )
 
     return evaluation
+
+
+@router.post("/grade-assessment", response_model=AssessmentReport)
+async def grade_assessment(submission: AssessmentSubmission):
+    """
+    Grade all answers from the final assessment and return a comprehensive report
+    with scores, strong/weak concepts, misconceptions, and suggested next topic.
+    """
+    try:
+        report = await llm_service.grade_assessment(submission)
+    except Exception as exc:
+        logger.exception("Assessment grading failed")
+        raise HTTPException(
+            status_code=502,
+            detail=f"LLM grading failed: {exc}",
+        )
+
+    return report
