@@ -12,6 +12,7 @@ from app.models.schemas import (
     LessonPlanResponse,
     PreviewResponse,
     SwitchLanguageRequest,
+    SwitchLanguageResponse,
     RenderRequest,
     RenderResponse,
     JobStatusResponse,

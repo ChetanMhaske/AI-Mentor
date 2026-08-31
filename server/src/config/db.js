@@ -6,7 +6,7 @@ const connectDB = async () => {
       console.warn("No MONGO_URI provided. Running without database for UI demo.");
       return;
     }
-    await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 2000 });
+    await mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 2000, family: 4 });
     console.log("MongoDB connected");
   } catch (err) {
     console.error("MongoDB connection error:", err.message);
