@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
+    "katex": "^0.18.4",
     "lucide-react": "^1.37.0",
     "mermaid": "^11.17.2",
     "react": "^19.0.0",
