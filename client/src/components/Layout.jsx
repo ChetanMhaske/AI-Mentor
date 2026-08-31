@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 
 function Layout() {
   return (
-    <div className="flex h-screen bg-[#15171e] text-gray-100 font-sans">
+    <div className="flex h-screen bg-warm-950 text-cream-100 font-sans">
       <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar />

@@ -1,1 +1,65 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Merriweather:wght@700;900&display=swap');
+
+@theme {
+  --color-cream-50: #fefcf3;
+  --color-cream-100: #fdf6e3;
+  --color-cream-200: #f5e6c8;
+  --color-cream-300: #ecdbb0;
+  --color-cream-400: #dcc68e;
+  --color-warm-50: #faf8f5;
+  --color-warm-100: #f0ebe4;
+  --color-warm-200: #e4ddd3;
+  --color-warm-300: #c7bfb3;
+  --color-warm-400: #a89c8c;
+  --color-warm-500: #8a7e6e;
+  --color-warm-600: #6b6053;
+  --color-warm-700: #504739;
+  --color-warm-800: #3a3229;
+  --color-warm-900: #262019;
+  --color-warm-950: #1a1610;
+  --color-chalk-500: #f4f1eb;
+  --color-board-700: #2a3a2e;
+  --color-board-800: #1e2c22;
+  --color-board-900: #162018;
+  --color-pencil-400: #e8a945;
+  --color-pencil-500: #d4922e;
+  --color-pencil-600: #b87a22;
+  --color-ink-500: #4a6fa5;
+  --color-ink-600: #3b5d8e;
+  --color-ink-700: #2d4a70;
+  --color-eraser-400: #e88b8b;
+  --color-eraser-500: #d06a6a;
+  --color-leaf-400: #6ec066;
+  --color-leaf-500: #4da847;
+  --color-leaf-600: #3d8d39;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: var(--color-warm-950);
+  color: var(--color-cream-100);
+}
+
+h1, h2, h3 {
+  font-family: 'Merriweather', Georgia, serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-warm-900); }
+::-webkit-scrollbar-thumb { background: var(--color-warm-600); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-warm-500); }
+
+/* Animations */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.animate-fade-in-up { animation: fadeInUp 0.5s ease-out both; }
+.animate-fade-in-up-delay { animation: fadeInUp 0.5s ease-out 0.15s both; }
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
