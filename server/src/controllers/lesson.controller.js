@@ -13,6 +13,23 @@ const create = async (req, res) => {
   }
 };
 
+const deleteLesson = async (req, res) => {
+  try {
+    const lesson = await Lesson.findById(req.params.id);
+    if (!lesson) return res.status(404).json({ message: "Lesson not found" });
+    if (lesson.createdBy?.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+    await Lesson.findByIdAndDelete(req.params.id);
+    // Also clean up any associated assessment
+    await Assessment.deleteMany({ lessonId: req.params.id });
+    res.json({ message: "Lesson deleted" });
+  } catch (err) {
+    console.error("Error deleting lesson:", err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
 const preview = async (req, res) => {
   try {
     const data = await lessonService.previewLesson(req.user._id, req.body);
@@ -240,4 +257,4 @@ const submitAssessment = async (req, res) => {
   }
 };
 
-module.exports = { create, preview, list, getById, switchLanguage, updateSectionVideo, evaluateAnswer, startAssessment, submitAssessment };
+module.exports = { create, preview, list, getById, deleteLesson, switchLanguage, updateSectionVideo, evaluateAnswer, startAssessment, submitAssessment };

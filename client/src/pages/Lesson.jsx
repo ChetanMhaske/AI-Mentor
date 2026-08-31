@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, PlayCircle, Loader2, Clock, Globe, BookText, ArrowRight } from "lucide-react";
+import { BookOpen, PlayCircle, Loader2, Clock, Globe, BookText, ArrowRight, Trash2 } from "lucide-react";
 
 function Lesson() {
   const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleting, setDeleting] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,6 +31,23 @@ function Lesson() {
     };
     fetchLessons();
   }, []);
+
+  const handleDelete = async (id, title) => {
+    if (!window.confirm(`Delete "${title}"?\nThis cannot be undone.`)) return;
+    setDeleting(id);
+    try {
+      const res = await fetch(`/api/lessons/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      setLessons(prev => prev.filter(l => l._id !== id));
+    } catch (err) {
+      alert("Failed to delete lesson: " + err.message);
+    } finally {
+      setDeleting(null);
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto animate-fade-in-up">
@@ -73,9 +91,22 @@ function Lesson() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {lessons.map(lesson => (
-            <div key={lesson._id} className="bg-warm-900 border border-warm-800/60 rounded-2xl p-6 hover:border-pencil-500/40 transition-colors flex flex-col group">
+            <div key={lesson._id} className="bg-warm-900 border border-warm-800/60 rounded-2xl p-6 hover:border-pencil-500/40 transition-colors flex flex-col group relative">
+              {/* Delete button */}
+              <button
+                onClick={(e) => { e.preventDefault(); handleDelete(lesson._id, lesson.title); }}
+                disabled={deleting === lesson._id}
+                className="absolute top-4 right-4 p-2 rounded-lg bg-warm-800/60 hover:bg-eraser-500/20 text-warm-500 hover:text-eraser-400 transition-colors opacity-0 group-hover:opacity-100"
+                title="Delete lesson"
+              >
+                {deleting === lesson._id
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <Trash2 className="w-4 h-4" />
+                }
+              </button>
+
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-cream-100 mb-2 line-clamp-2 group-hover:text-pencil-300 transition-colors">{lesson.title}</h3>
+                <h3 className="text-xl font-bold text-cream-100 mb-2 line-clamp-2 group-hover:text-pencil-300 transition-colors pr-8">{lesson.title}</h3>
                 {lesson.topic && <p className="text-warm-400 text-sm font-medium mb-5 line-clamp-1">{lesson.topic}</p>}
                 
                 <div className="flex items-center gap-4 text-sm text-warm-500 mb-8">
@@ -100,3 +131,4 @@ function Lesson() {
 }
 
 export default Lesson;
+
