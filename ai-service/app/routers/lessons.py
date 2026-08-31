@@ -53,8 +53,12 @@ async def create_lesson_plan(request: LessonPlanRequest):
 
     if request.material_id:
         query = request.topic or request.learning_objective
+        logger.info("[DEBUG] RAG query — material_id=%s, query=%s", request.material_id, query)
         context_chunks = await rag_service.retrieve_chunks(request.material_id, query=query)
         grounded = len(context_chunks) > 0
+        logger.info("[DEBUG] RAG returned %d chunks, grounded=%s", len(context_chunks), grounded)
+        if context_chunks:
+            logger.info("[DEBUG] First chunk preview: %s", context_chunks[0][:200])
 
     try:
         plan = await llm_service.generate_lesson_plan(request, context_chunks)

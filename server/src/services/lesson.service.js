@@ -53,11 +53,14 @@ const createLesson = async (userId, body) => {
   let ai_material_id = material_id;
   if (material_id) {
     const Material = require("../models/Material");
+    console.log("[DEBUG] Looking up Material with MongoDB _id:", material_id);
     const mat = await Material.findById(material_id);
+    console.log("[DEBUG] Found material:", mat ? { _id: mat._id, ai_service_material_id: mat.ai_service_material_id, title: mat.title } : "NOT FOUND");
     if (mat && mat.ai_service_material_id) {
       ai_material_id = mat.ai_service_material_id;
     }
   }
+  console.log("[DEBUG] Final material_id sent to AI service:", ai_material_id, "| topic:", topic);
 
   // Call the AI service
   const response = await fetch(`${AI_SERVICE_URL}/lessons/plan`, {
