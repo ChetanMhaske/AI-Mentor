@@ -185,12 +185,16 @@ const CodeBlock = ({ spec }) => {
 };
 
 // --- Main VisualRenderer ---
-const VisualRenderer = ({ section }) => {
-  if (!section || section.visual_type === "none") {
+const VisualRenderer = ({ section, dynamicVisual }) => {
+  // Use dynamic visual from teacher interaction if available, else section visual
+  const activeVisual = dynamicVisual || section;
+
+  if (!activeVisual || activeVisual.visual_type === "none") {
     return null;
   }
 
-  const { visual_type, visual_spec } = section;
+  const visual_type = dynamicVisual ? dynamicVisual.visual_type : activeVisual.visual_type;
+  const visual_spec = dynamicVisual ? dynamicVisual.visual_spec : activeVisual.visual_spec;
 
   if (!visual_spec) {
     return (
@@ -231,7 +235,16 @@ const VisualRenderer = ({ section }) => {
     }
   };
 
-  return <div className="visual-renderer-wrapper">{renderContent()}</div>;
+  return (
+    <div className="visual-renderer-wrapper">
+      {dynamicVisual && (
+        <div className="mb-2 px-2 py-1 bg-pencil-500/10 border border-pencil-500/20 rounded-lg text-xs text-pencil-400 font-medium text-center">
+          ✨ Teacher-generated visual
+        </div>
+      )}
+      {renderContent()}
+    </div>
+  );
 };
 
 export default VisualRenderer;

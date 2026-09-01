@@ -160,7 +160,7 @@ function Upload() {
             <label className="text-sm font-semibold text-cream-200 mb-3 flex items-center gap-2">
               <GraduationCap className="w-4 h-4 text-pencil-400" /> Your Level
             </label>
-            <div className="flex gap-3 mt-2">
+            <div className="flex flex-col sm:flex-row gap-3 mt-2">
               {LEVELS.map(l => (
                 <button key={l} onClick={() => setLevel(l)}
                   className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold capitalize transition-all border ${
@@ -178,7 +178,7 @@ function Upload() {
             <label className="text-sm font-semibold text-cream-200 mb-3 flex items-center gap-2">
               <Globe className="w-4 h-4 text-pencil-400" /> Teaching Language
             </label>
-            <div className="flex gap-3 mt-2">
+            <div className="flex flex-col sm:flex-row gap-3 mt-2">
               {LANGUAGES.map(l => (
                 <button key={l.code} onClick={() => setLanguage(l.code)}
                   className={`flex-1 py-3 px-4 rounded-xl text-sm font-semibold transition-all border ${

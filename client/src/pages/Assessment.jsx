@@ -242,7 +242,7 @@ function Assessment() {
 
         {/* Next Topic CTA */}
         {report.suggested_next_topic && (
-          <div className="bg-gradient-to-r from-ink-700/30 to-ink-600/20 border border-ink-600/30 rounded-2xl p-6 flex items-center justify-between">
+          <div className="bg-gradient-to-r from-ink-700/30 to-ink-600/20 border border-ink-600/30 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <span className="text-xs font-semibold text-ink-500 uppercase tracking-wider">Suggested Next Topic</span>
               <h3 className="text-lg font-bold text-cream-100 mt-1">{report.suggested_next_topic}</h3>

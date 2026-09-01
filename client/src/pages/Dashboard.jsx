@@ -71,7 +71,7 @@ function Dashboard() {
           <h1 className="text-3xl font-black text-cream-100 mb-2">Welcome back, Learner!</h1>
           <p className="text-warm-300 max-w-xl">Continue your personalized learning journey. Your AI tutor adapts to your pace and understanding.</p>
           
-          <div className="flex gap-3 mt-6">
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
             <button
               onClick={() => navigate("/upload")}
               className="flex items-center gap-2 px-5 py-2.5 bg-pencil-500 hover:bg-pencil-600 text-warm-950 font-bold rounded-xl transition-colors shadow-lg shadow-pencil-500/20"
@@ -89,7 +89,7 @@ function Dashboard() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 animate-fade-in-up-delay">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in-up-delay">
         <StatCard icon={BookOpen} label="Topics Studied" value={profile.pastTopics?.length || 0} color="ink" />
         <StatCard icon={CheckCircle2} label="Strong Concepts" value={profile.strongConcepts?.length || 0} color="leaf" />
         <StatCard icon={AlertTriangle} label="Weak Areas" value={profile.weakConcepts?.length || 0} color="pencil" />
@@ -147,7 +147,7 @@ function Dashboard() {
 
       {/* Suggested Next Topic CTA */}
       {suggestedNext && (
-        <div className="bg-gradient-to-r from-ink-700/30 to-ink-600/20 border border-ink-600/30 rounded-2xl p-6 flex items-center justify-between animate-fade-in-up-delay">
+        <div className="bg-gradient-to-r from-ink-700/30 to-ink-600/20 border border-ink-600/30 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-fade-in-up-delay">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Target className="w-5 h-5 text-pencil-400" />

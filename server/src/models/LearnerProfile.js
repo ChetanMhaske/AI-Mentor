@@ -25,6 +25,16 @@ const learningHistorySchema = new mongoose.Schema(
   { _id: false }
 );
 
+const misconceptionSchema = new mongoose.Schema(
+  {
+    concept: { type: String },
+    misconception: { type: String },
+    lastDetected: { type: Date, default: Date.now },
+    resolved: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
+
 const learnerProfileSchema = new mongoose.Schema(
   {
     user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
@@ -37,6 +47,9 @@ const learnerProfileSchema = new mongoose.Schema(
     strongConcepts: [{ type: String }],
     pastScores: [pastScoreSchema],
     learningHistory: [learningHistorySchema],
+    // NEW: Real-time adaptive teaching data
+    conceptMastery: { type: Map, of: Number, default: {} },
+    misconceptions: [misconceptionSchema],
   },
   { timestamps: true }
 );

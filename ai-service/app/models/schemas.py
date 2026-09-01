@@ -262,3 +262,57 @@ class AssessmentReport(BaseModel):
     recommended_revision: list[str]
     suggested_next_topic: str
     graded_answers: list[GradedAnswer]
+
+
+# ---------------------------------------------------------------------------
+# Teacher Session — Live Adaptive Teaching
+# ---------------------------------------------------------------------------
+
+class TeacherSessionStartRequest(BaseModel):
+    """Request to start a live teacher session for a lesson."""
+    lesson_id: str
+    lesson_title: str
+    lesson_topic: str
+    sections: list[dict]
+    student_level: str = "beginner"
+    available_time: int = 20
+    language: str = "en"
+    student_profile: dict | None = None
+    material_id: str | None = None
+
+class TeacherSessionStartResponse(BaseModel):
+    session_id: str
+    session_state: dict
+
+class TeacherInteractionRequest(BaseModel):
+    """Request for a live teacher interaction during a lesson."""
+    session_id: str
+    student_message: str
+    current_section_index: int = 0
+
+class TeacherInteractionResponse(BaseModel):
+    """Structured teaching decision from the AI teacher."""
+    response: str
+    intent: str = "question"
+    understanding_level: float = 0.5
+    misconception_detected: bool = False
+    misconception: str | None = None
+    teaching_strategy: str = "simple_explanation"
+    difficulty_action: str = "maintain"
+    visual_required: bool = False
+    visual_type: str = "none"
+    visual_data: dict | None = None
+    follow_up_question: str | None = None
+    should_pause_lesson: bool = False
+    should_resume_lesson: bool = False
+    mastery_delta: float = 0.0
+    session_state: dict | None = None
+
+class TeacherTTSRequest(BaseModel):
+    """Request to generate TTS for a teacher response."""
+    text: str
+    language: str = "en"
+
+class TeacherTTSResponse(BaseModel):
+    audio_url: str
+

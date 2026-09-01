@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, SkipForward, SkipBack, Loader2, HelpCircle, PlayCircle, ClipboardCheck } from "lucide-react";
 import VisualRenderer from "../components/VisualRenderer";
 import CheckpointOverlay from "../components/CheckpointOverlay";
+import TeacherChat from "../components/TeacherChat";
+import useTeacherSession from "../hooks/useTeacherSession";
 
 function LessonPlayer() {
   const { id } = useParams();
@@ -18,14 +20,35 @@ function LessonPlayer() {
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [showScript, setShowScript] = useState(false);
 
+  // Media refs for pause/resume on teacher interaction
+  const videoRef = useRef(null);
+  const audioRef = useRef(null);
+
   const sections = lesson?.plan?.sections || [];
   const currentSection = sections[currentSectionIndex];
+
+  // --- Live Teacher Session ---
+  const {
+    sessionId,
+    sessionState,
+    conversationHistory,
+    isProcessing,
+    teacherState,
+    dynamicVisual,
+    lastResponse,
+    audioRef: teacherAudioRef,
+    sendMessage,
+    clearDynamicVisual,
+    setTeacherState,
+  } = useTeacherSession({ lessonId: id, lesson });
 
   useEffect(() => {
     setShowCheckpoint(false);
     setEvaluationResult(null);
     setShowScript(false);
     setCurrentQuestion(currentSection?.checkpoint_question || null);
+    // Clear dynamic visual when switching sections
+    clearDynamicVisual();
   }, [currentSectionIndex, currentSection]);
 
   useEffect(() => {
@@ -61,6 +84,20 @@ function LessonPlayer() {
 
     return () => clearInterval(interval);
   }, [id, currentSectionIndex]);
+
+  // --- Handle teacher response: pause/resume media ---
+  useEffect(() => {
+    if (lastResponse?.should_pause_lesson) {
+      // Pause any playing media
+      if (videoRef.current && !videoRef.current.paused) videoRef.current.pause();
+      if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+    }
+    if (lastResponse?.should_resume_lesson) {
+      // Resume paused media
+      if (videoRef.current && videoRef.current.paused) videoRef.current.play().catch(() => {});
+      if (audioRef.current && audioRef.current.paused) audioRef.current.play().catch(() => {});
+    }
+  }, [lastResponse]);
 
   if (loading) {
     return (
@@ -114,23 +151,35 @@ function LessonPlayer() {
     }
   };
 
-  const hasVisual = currentSection?.visual_type && currentSection.visual_type !== "none";
+  /** Send a message to the AI teacher — handles pausing media */
+  const handleTeacherMessage = async (text) => {
+    // Pause media when student asks a question
+    if (videoRef.current && !videoRef.current.paused) videoRef.current.pause();
+    if (audioRef.current && !audioRef.current.paused) audioRef.current.pause();
+    setTeacherState("LISTENING");
+
+    await sendMessage(text, currentSectionIndex);
+  };
+
+  const hasVisual = (dynamicVisual) || (currentSection?.visual_type && currentSection.visual_type !== "none");
   const progressPercent = ((currentSectionIndex + 1) / sections.length) * 100;
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col h-full animate-fade-in-up">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-4">
-        <button onClick={() => navigate("/lesson")} className="p-2 rounded-full hover:bg-warm-800 transition-colors">
-          <ArrowLeft className="w-5 h-5 text-warm-400" />
-        </button>
-        <div className="flex-1">
-          <h2 className="text-xl font-bold text-cream-100">{lesson.title}</h2>
-          <p className="text-sm text-warm-400">Section {currentSectionIndex + 1} of {sections.length}: {currentSection?.section_title}</p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 w-full sm:w-auto flex-1">
+          <button onClick={() => navigate("/lesson")} className="p-2 rounded-full hover:bg-warm-800 transition-colors shrink-0">
+            <ArrowLeft className="w-5 h-5 text-warm-400" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-bold text-cream-100 truncate">{lesson.title}</h2>
+            <p className="text-sm text-warm-400 truncate">Section {currentSectionIndex + 1} of {sections.length}: {currentSection?.section_title}</p>
+          </div>
         </div>
         <button
           onClick={() => navigate(`/lesson/${id}/assessment`)}
-          className="flex items-center gap-2 px-4 py-2 bg-pencil-500/15 text-pencil-400 text-sm font-semibold rounded-xl border border-pencil-500/20 hover:bg-pencil-500/25 transition-colors"
+          className="flex items-center justify-center w-full sm:w-auto gap-2 px-4 py-2 bg-pencil-500/15 text-pencil-400 text-sm font-semibold rounded-xl border border-pencil-500/20 hover:bg-pencil-500/25 transition-colors shrink-0"
         >
           <ClipboardCheck className="w-4 h-4" /> Take Assessment
         </button>
@@ -142,13 +191,13 @@ function LessonPlayer() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0">
         {/* Avatar / Video — Focal Point */}
         <div className={`${hasVisual ? "lg:col-span-2" : "lg:col-span-5"} bg-board-900 rounded-2xl border border-board-700/50 overflow-hidden relative flex flex-col`}>
           {/* Video / Avatar Main Area */}
           <div className="flex-1 flex items-center justify-center relative min-h-[300px]">
             {currentSection?.render_status === "ready" && currentSection?.video_url ? (
-              <video src={currentSection.video_url} controls autoPlay onEnded={handleMediaEnded} className="w-full h-full object-contain" />
+              <video ref={videoRef} src={currentSection.video_url} controls autoPlay onEnded={handleMediaEnded} className="w-full h-full object-contain" />
             ) : currentSection?.render_status === "ready" && currentSection?.audio_url ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center relative w-full h-full">
                 {currentSection?.avatar_status === "fallback_audio" && (
@@ -156,14 +205,14 @@ function LessonPlayer() {
                     Audio-only mode
                   </div>
                 )}
-                <audio src={currentSection.audio_url} controls autoPlay onEnded={handleMediaEnded} className="mb-6" />
+                <audio ref={audioRef} src={currentSection.audio_url} controls autoPlay onEnded={handleMediaEnded} className="mb-6" />
                 <PlayCircle className="w-12 h-12 text-warm-600 mb-4" />
                 <p className="text-warm-500 text-sm">Avatar unavailable</p>
               </div>
             ) : currentSection?.render_status === "failed" ? (
               <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                 {currentSection?.audio_url && (
-                  <audio src={currentSection.audio_url} controls onEnded={handleMediaEnded} className="mb-6" />
+                  <audio ref={audioRef} src={currentSection.audio_url} controls onEnded={handleMediaEnded} className="mb-6" />
                 )}
                 <PlayCircle className="w-12 h-12 text-warm-600 mb-4" />
                 <p className="text-warm-500 text-sm">Avatar rendering failed</p>
@@ -205,13 +254,29 @@ function LessonPlayer() {
         {/* Visual Panel (if applicable) */}
         {hasVisual && (
           <div className="lg:col-span-3 bg-warm-900 rounded-2xl border border-warm-800/60 p-4 overflow-auto flex items-center justify-center">
-            <VisualRenderer section={currentSection} />
+            <VisualRenderer section={currentSection} dynamicVisual={dynamicVisual} />
           </div>
         )}
       </div>
 
+      {/* AI Teacher Chat — Always visible */}
+      <div className="mt-4 shrink-0">
+        <TeacherChat
+          onSendMessage={handleTeacherMessage}
+          conversationHistory={conversationHistory}
+          isProcessing={isProcessing}
+          teacherState={teacherState}
+          sessionState={sessionState}
+          lastResponse={lastResponse}
+          language={lesson?.language}
+        />
+      </div>
+
+      {/* Hidden audio element for teacher TTS responses */}
+      <audio ref={teacherAudioRef} className="hidden" />
+
       {/* Controls */}
-      <div className="flex items-center justify-between mt-4 bg-warm-900 p-4 rounded-xl border border-warm-800/60">
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 mt-4 bg-warm-900 p-4 rounded-xl border border-warm-800/60 shrink-0">
         <button
           onClick={() => setCurrentSectionIndex(Math.max(0, currentSectionIndex - 1))}
           disabled={currentSectionIndex === 0}
