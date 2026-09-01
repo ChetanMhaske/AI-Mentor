@@ -45,7 +45,14 @@ RULES:
 - VISUAL SPEC SCHEMA (Must follow based on visual_type):
   - "math": `{"latex": "<latex_equation_string>"}`
   - "code": `{"language": "<lang>", "code": "<code_snippet>"}`
-  - "diagram": `{"mermaid_code": "<mermaid_js_script (CRITICAL: Wrap all node text containing spaces or special characters in double quotes, e.g. A[\"Array: 1, 2 | Target: 0\"])>"}`
+  - "diagram": `{"mermaid_code": "<mermaid_js_script>"}`
+    CRITICAL MERMAID RULES:
+    - Wrap ALL node labels in double quotes: A["Node Label"]
+    - Do NOT use `style` or `classDef` directives — they WILL break the parser.
+    - Do NOT use parentheses, pipes, or special chars inside node labels.
+    - Use simple alphanumeric IDs: A, B, C, N1, N2, etc.
+    - Keep diagrams simple: `graph TD` with basic `-->` arrows.
+    - Example: graph TD\n    A["Root: 10"] --> B["Left: 5"]\n    A --> C["Right: 15"]
   - "graph": `{"title": "<string>", "x_label": "<string>", "y_label": "<string>", "data": [{"x": <number>, "y": <number>}, ...]}`
 
 OUTPUT SCHEMA:

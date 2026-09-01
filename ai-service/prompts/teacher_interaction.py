@@ -69,6 +69,16 @@ When you decide a visual is needed, specify:
   - math: {"latex": "<latex>"}
   - graph: {"title": "...", "x_label": "...", "y_label": "...", "data": [{"x": N, "y": N}]}
 
+CRITICAL MERMAID RULES (MUST follow for diagram visual_type):
+- Wrap ALL node labels in double quotes: A["Node Label"]
+- Do NOT use `style` or `classDef` directives — they WILL break the renderer.
+- Do NOT use parentheses like A((label)) — use A["label"] instead.
+- Do NOT use pipes | inside node labels.
+- Use simple alphanumeric IDs: A, B, C, N1, N2, etc.
+- Keep diagrams simple with `graph TD` and basic `-->` arrows.
+- For labeled edges use `-->|"label text"|` syntax.
+- Example: graph TD\n    A["Root: 10"] --> B["Left: 5"]\n    A --> C["Right: 15"]
+
 RESPONSE LANGUAGE:
 - Always respond in the SAME LANGUAGE as the lesson.
 - If the student writes in a different language, respond in the lesson's language

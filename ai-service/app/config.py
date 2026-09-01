@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     LLM_API_KEY: str = ""
-    LLM_MODEL: str = "gemini-2.0-flash"
+    LLM_MODEL: str = "gemini-3.6-flash"
     TTS_API_KEY: str = ""
     AVATAR_API_KEY: str = ""
     WAV2LIP_ENDPOINT_URL: str = ""

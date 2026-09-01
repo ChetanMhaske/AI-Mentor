@@ -22,6 +22,21 @@ mermaid.initialize({
   },
 });
 
+// --- Sanitize Mermaid code to prevent parser errors ---
+const sanitizeMermaid = (code) => {
+  if (!code) return code;
+  return code
+    .split("\n")
+    // Remove style and classDef directives that break the parser
+    .filter((line) => {
+      const trimmed = line.trim().toLowerCase();
+      return !trimmed.startsWith("style ") && !trimmed.startsWith("classdef ");
+    })
+    .join("\n")
+    // Replace (( )) circle nodes with [ ] rectangles (safer)
+    .replace(/\(\(([^)]*)\)\)/g, '["$1"]');
+};
+
 // --- Mermaid Diagram Component ---
 const MermaidDiagram = ({ chart }) => {
   const containerRef = useRef(null);
@@ -29,8 +44,9 @@ const MermaidDiagram = ({ chart }) => {
   useEffect(() => {
     if (chart && containerRef.current) {
       const id = "mermaid-" + Math.random().toString(36).substring(2, 9);
+      const sanitized = sanitizeMermaid(chart);
       mermaid
-        .render(id, chart)
+        .render(id, sanitized)
         .then((result) => {
           if (containerRef.current) containerRef.current.innerHTML = result.svg;
         })

@@ -49,7 +49,7 @@ async def generate_tts(script: str, job_id: str, language: str = "en") -> str:
         logger.info(f"Attempting Gemini TTS for job {job_id}")
         client = genai.Client(api_key=settings.LLM_API_KEY)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model=settings.LLM_MODEL,
             contents=script,
             config=types.GenerateContentConfig(
                 response_modalities=["AUDIO"],
