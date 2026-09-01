@@ -165,9 +165,9 @@ function LessonPlayer() {
   const progressPercent = ((currentSectionIndex + 1) / sections.length) * 100;
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col h-full animate-fade-in-up">
+    <div className="max-w-6xl mx-auto flex flex-col min-h-full animate-fade-in-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4 shrink-0">
         <div className="flex items-center gap-4 w-full sm:w-auto flex-1">
           <button onClick={() => navigate("/lesson")} className="p-2 rounded-full hover:bg-warm-800 transition-colors shrink-0">
             <ArrowLeft className="w-5 h-5 text-warm-400" />
@@ -186,12 +186,12 @@ function LessonPlayer() {
       </div>
 
       {/* Section Progress Bar */}
-      <div className="w-full h-1.5 bg-warm-800 rounded-full mb-4 overflow-hidden">
+      <div className="w-full h-1.5 bg-warm-800 rounded-full mb-4 overflow-hidden shrink-0">
         <div className="h-full bg-gradient-to-r from-pencil-500 to-pencil-400 rounded-full transition-all duration-500" style={{ width: `${progressPercent}%` }} />
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0 overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-[400px] lg:min-h-[500px] shrink-0 pb-4 lg:pb-0">
         {/* Avatar / Video — Focal Point */}
         <div className={`${hasVisual ? "lg:col-span-2" : "lg:col-span-5"} bg-board-900 rounded-2xl border border-board-700/50 overflow-hidden relative flex flex-col`}>
           {/* Video / Avatar Main Area */}
