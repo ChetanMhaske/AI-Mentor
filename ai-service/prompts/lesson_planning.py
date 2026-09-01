@@ -96,7 +96,7 @@ Since the Avatar speaks at ~130 words per minute, follow these strict script len
 • ≤5 minutes:
   - 1–2 sections maximum.
   - explanation_script length: ~150-200 words per section (creates ~1.5 mins of video each).
-  - NO checkpoint questions (set checkpoint_question to null).
+  - Include exactly 1 checkpoint question per section.
   - End each section with a concise key takeaway instead of an example list.
   - final_assessment should have at most 1 question, or be empty.
 

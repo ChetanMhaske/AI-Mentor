@@ -19,7 +19,7 @@ export default function CheckpointOverlay({ question, onSubmit, evaluationResult
 
   return (
     <div className="absolute inset-0 z-50 bg-warm-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-warm-900 border border-warm-800/60 p-8 rounded-2xl max-w-2xl w-full shadow-2xl relative">
+      <div className="bg-warm-900 border border-warm-800/60 p-6 rounded-2xl max-w-2xl w-full max-h-full overflow-y-auto shadow-2xl relative">
         {!evaluationResult ? (
           <div className="animate-fade-in-up">
             <div className="mb-6">
