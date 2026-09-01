@@ -9,7 +9,7 @@ const create = async (req, res) => {
     const lesson = await lessonService.createLesson(req.user._id, req.body);
     res.status(201).json({ lesson });
   } catch (err) {
-    res.status(502).json({ message: err.message });
+    res.status(err.status || 502).json({ message: err.message });
   }
 };
 
@@ -35,7 +35,7 @@ const preview = async (req, res) => {
     const data = await lessonService.previewLesson(req.user._id, req.body);
     res.json(data);
   } catch (err) {
-    res.status(502).json({ message: err.message });
+    res.status(err.status || 502).json({ message: err.message });
   }
 };
 
@@ -113,7 +113,7 @@ const evaluateAnswer = async (req, res) => {
     res.json({ evaluation });
   } catch (err) {
     console.error("Error evaluating answer:", err);
-    res.status(502).json({ message: err.message });
+    res.status(err.status || 502).json({ message: err.message });
   }
 };
 
@@ -175,7 +175,9 @@ const submitAssessment = async (req, res) => {
 
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
-      throw new Error(err.detail || `AI service returned ${response.status}`);
+      const error = new Error(err.detail || `AI service returned ${response.status}`);
+      error.status = response.status;
+      throw error;
     }
 
     const report = await response.json();
@@ -253,7 +255,7 @@ const submitAssessment = async (req, res) => {
     res.json({ report });
   } catch (err) {
     console.error("Error submitting assessment:", err);
-    res.status(500).json({ message: err.message });
+    res.status(err.status || 500).json({ message: err.message });
   }
 };
 

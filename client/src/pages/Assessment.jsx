@@ -24,7 +24,10 @@ function Assessment() {
           method: "POST",
           headers: { "Authorization": `Bearer ${token}` }
         });
-        if (!res.ok) throw new Error("Failed to load assessment");
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.message || "Failed to load assessment");
+        }
         const data = await res.json();
         setQuestions(data.assessment?.questions || []);
         setPhase("quiz");
@@ -59,7 +62,10 @@ function Assessment() {
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ answers: answerPayload })
       });
-      if (!res.ok) throw new Error("Failed to submit assessment");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to submit assessment");
+      }
       const data = await res.json();
       setReport(data.report);
       setPhase("report");

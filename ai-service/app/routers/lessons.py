@@ -62,6 +62,8 @@ async def create_lesson_plan(request: LessonPlanRequest):
 
     try:
         plan = await llm_service.generate_lesson_plan(request, context_chunks)
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Lesson plan generation failed")
         raise HTTPException(
@@ -94,11 +96,13 @@ async def preview_lesson_plan(request: LessonPlanRequest):
 
     try:
         preview = await llm_service.generate_lesson_preview(request)
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Lesson preview generation failed")
         raise HTTPException(
             status_code=502,
-            detail=f"LLM preview failed: {exc}",
+            detail=f"LLM preview generation failed: {exc}",
         )
 
     return PreviewResponse(success=True, preview=preview)
@@ -112,8 +116,10 @@ async def switch_language(request: SwitchLanguageRequest):
     """
     try:
         translated_section = await llm_service.translate_lesson_section(request)
+    except HTTPException:
+        raise
     except Exception as exc:
-        logger.exception("Section translation failed")
+        logger.exception("Translation failed")
         raise HTTPException(
             status_code=502,
             detail=f"LLM translation failed: {exc}",
@@ -167,6 +173,8 @@ async def evaluate_answer(request: AnswerEvaluationRequest):
     """
     try:
         evaluation = await llm_service.evaluate_answer(request)
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Answer evaluation failed")
         raise HTTPException(
@@ -185,6 +193,8 @@ async def grade_assessment(submission: AssessmentSubmission):
     """
     try:
         report = await llm_service.grade_assessment(submission)
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.exception("Assessment grading failed")
         raise HTTPException(

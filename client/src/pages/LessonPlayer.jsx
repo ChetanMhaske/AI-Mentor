@@ -91,7 +91,10 @@ function LessonPlayer() {
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
         body: JSON.stringify({ sectionIndex: currentSectionIndex, question: currentQuestion.question, options: currentQuestion.options, studentAnswer: answer })
       });
-      if (!res.ok) throw new Error("Failed to evaluate answer");
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to evaluate answer");
+      }
       const data = await res.json();
       setEvaluationResult(data.evaluation);
     } catch (err) {

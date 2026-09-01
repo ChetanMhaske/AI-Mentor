@@ -4,9 +4,16 @@ LLM Service — Lesson plan generation via Google Gemini.
 
 import json
 import logging
+import asyncio
+import time
+import re
+from functools import wraps
 
 from google import genai
 from google.genai import types
+from google.genai import errors
+
+from fastapi import HTTPException
 
 from app.config import settings
 from app.models.schemas import (
@@ -49,6 +56,72 @@ def _get_client() -> genai.Client:
     return _client
 
 
+class _RateLimiter:
+    def __init__(self, calls: int, period: float):
+        self.calls = calls
+        self.period = period
+        self.timestamps = []
+        self._lock = asyncio.Lock()
+
+    async def wait_if_needed(self):
+        async with self._lock:
+            now = time.time()
+            # Remove timestamps older than our period
+            self.timestamps = [t for t in self.timestamps if now - t < self.period]
+            if len(self.timestamps) >= self.calls:
+                # Sleep until the oldest timestamp falls out of the window
+                sleep_time = self.period - (now - self.timestamps[0])
+                if sleep_time > 0:
+                    logger.info(f"RateLimiter: Quick succession detected. Delaying Gemini call by {sleep_time:.2f}s...")
+                    await asyncio.sleep(sleep_time)
+                # Re-evaluate now
+                now = time.time()
+                self.timestamps = [t for t in self.timestamps if now - t < self.period]
+            self.timestamps.append(now)
+
+# Limit to 5 requests per 10 seconds (adjust as needed to prevent hitting standard rate limits)
+_limiter = _RateLimiter(calls=5, period=10.0)
+
+
+def with_retry_and_backoff(max_retries=3):
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            await _limiter.wait_if_needed()
+            delays = [2, 4, 8]
+            for attempt in range(max_retries + 1):
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as e:
+                    # Check if it's a transient error (503, 429, timeout)
+                    is_transient = False
+                    err_str = str(e).lower()
+                    if isinstance(e, errors.APIError):
+                        if getattr(e, "code", None) in (503, 429) or getattr(e, "status_code", None) in (503, 429):
+                            is_transient = True
+                        elif "503" in err_str or "429" in err_str or "timeout" in err_str or "unavailable" in err_str or "capacity" in err_str:
+                            is_transient = True
+                    elif "timeout" in err_str or "readtimeout" in err_str:
+                        is_transient = True
+
+                    if not is_transient or attempt == max_retries:
+                        if attempt == max_retries:
+                            logger.error(f"Gemini call failed after {max_retries} retries: {e}")
+                            
+                            # Parse reset time from Gemini error message if available
+                            match = re.search(r"retry in (\d+(?:\.\d+)?)s", str(e))
+                            detail_msg = "You have reached the daily API limit. Please try again tomorrow."
+                                
+                            raise HTTPException(status_code=503, detail=detail_msg)
+                        raise # Non-transient error, fail fast
+                    
+                    delay = delays[attempt] if attempt < len(delays) else delays[-1]
+                    logger.warning(f"Gemini rate-limited or unavailable on {func.__name__}, retry {attempt + 1}/{max_retries} in {delay}s... (Error: {e})")
+                    await asyncio.sleep(delay)
+        return wrapper
+    return decorator
+
+
 def _build_system_prompt(
     context_chunks: list[str],
     learner_profile: LearnerProfile | None = None,
@@ -82,6 +155,7 @@ def _build_preview_system_prompt(
     return "\n\n".join(parts)
 
 
+@with_retry_and_backoff(max_retries=3)
 async def generate_lesson_plan(
     request: LessonPlanRequest,
     context_chunks: list[str],
@@ -132,6 +206,7 @@ async def generate_lesson_plan(
     return plan
 
 
+@with_retry_and_backoff(max_retries=3)
 async def generate_lesson_preview(
     request: LessonPlanRequest,
 ) -> LessonPlanPreview:
@@ -176,6 +251,7 @@ async def generate_lesson_preview(
     return preview
 
 
+@with_retry_and_backoff(max_retries=3)
 async def translate_lesson_section(request: SwitchLanguageRequest) -> Section:
     """Translate a single section using Gemini."""
     client = _get_client()
@@ -213,6 +289,7 @@ async def translate_lesson_section(request: SwitchLanguageRequest) -> Section:
     return translated_section
 
 
+@with_retry_and_backoff(max_retries=3)
 async def evaluate_answer(request: AnswerEvaluationRequest) -> AnswerEvaluationResponse:
     """Evaluate a student's answer to a checkpoint question."""
     client = _get_client()
@@ -242,6 +319,7 @@ async def evaluate_answer(request: AnswerEvaluationRequest) -> AnswerEvaluationR
     return evaluation
 
 
+@with_retry_and_backoff(max_retries=3)
 async def grade_assessment(submission: AssessmentSubmission) -> AssessmentReport:
     """Grade all assessment answers and produce a full report."""
     client = _get_client()

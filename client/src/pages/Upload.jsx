@@ -108,7 +108,10 @@ function Upload() {
         }),
       });
 
-      if (!lessonRes.ok) throw new Error("Failed to generate lesson");
+      if (!lessonRes.ok) {
+        const errData = await lessonRes.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to generate lesson");
+      }
       const lessonData = await lessonRes.json();
 
       // Navigate to the lesson player

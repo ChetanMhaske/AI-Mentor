@@ -80,7 +80,9 @@ const createLesson = async (userId, body) => {
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `AI service returned ${response.status}`);
+    const error = new Error(err.detail || `AI service returned ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();
@@ -170,7 +172,9 @@ const previewLesson = async (userId, body) => {
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `AI service returned ${response.status}`);
+    const error = new Error(err.detail || `AI service returned ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
 
   return response.json();
@@ -238,7 +242,9 @@ const switchSectionLanguage = async (lessonId, sectionIndex, targetLanguage, use
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `AI service returned ${response.status}`);
+    const error = new Error(err.detail || `AI service returned ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
 
   const data = await response.json();
@@ -309,7 +315,9 @@ const evaluateAnswer = async (lessonId, userId, sectionIndex, question, options,
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.detail || `AI service returned ${response.status}`);
+    const error = new Error(err.detail || `AI service returned ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
 
   const evaluation = await response.json();
