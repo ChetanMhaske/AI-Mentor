@@ -89,19 +89,28 @@ OUTPUT SCHEMA:
 TIME_ADAPTATION_RULES = """\
 IMPORTANT — adapt the lesson structure based on available time:
 
+The "Available Time" dictates BOTH the number of sections AND the length of the explanation scripts.
+The total spoken video length must roughly equal HALF of the Available Time.
+Since the Avatar speaks at ~130 words per minute, follow these strict script length guidelines:
+
 • ≤5 minutes:
   - 1–2 sections maximum.
+  - explanation_script length: ~150-200 words per section (creates ~1.5 mins of video each).
   - NO checkpoint questions (set checkpoint_question to null).
   - End each section with a concise key takeaway instead of an example list.
   - final_assessment should have at most 1 question, or be empty.
 
 • ~20 minutes (6–30 minutes):
   - 3–5 sections.
+  - explanation_script length: ~400-500 words per section (creates ~3-4 mins of video each). 
+    CRITICAL: To achieve this length, you MUST write VERY LONG, in-depth scripts. heavily expand on analogies, real-world use cases, potential pitfalls, and step-by-step walkthroughs. Do NOT be brief.
   - Include 1–2 checkpoint questions spread across sections.
   - final_assessment should have 2–3 questions.
 
 • ~60 minutes (31–90 minutes):
   - 5–8 sections.
+  - explanation_script length: ~600-800 words per section (creates ~5-6 mins of video each, totaling ~30 mins of video).
+    CRITICAL: To achieve this length, your script MUST be a comprehensive masterclass. Include multiple detailed examples, historical context, advanced edge cases, and extremely thorough explanations. Do NOT summarize.
   - Include checkpoint questions on most sections.
   - final_assessment should have 4–6 questions.
 
