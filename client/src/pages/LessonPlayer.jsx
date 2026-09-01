@@ -141,7 +141,7 @@ function LessonPlayer() {
       {/* Main Content Area */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-4 min-h-0 overflow-hidden">
         {/* Avatar / Video — Focal Point */}
-        <div className={`${hasVisual ? "lg:col-span-3" : "lg:col-span-5"} bg-board-900 rounded-2xl border border-board-700/50 overflow-hidden relative flex flex-col`}>
+        <div className={`${hasVisual ? "lg:col-span-2" : "lg:col-span-5"} bg-board-900 rounded-2xl border border-board-700/50 overflow-hidden relative flex flex-col`}>
           {/* Video / Avatar Main Area */}
           <div className="flex-1 flex items-center justify-center relative min-h-[300px]">
             {currentSection?.render_status === "ready" && currentSection?.video_url ? (
@@ -201,7 +201,7 @@ function LessonPlayer() {
 
         {/* Visual Panel (if applicable) */}
         {hasVisual && (
-          <div className="lg:col-span-2 bg-warm-900 rounded-2xl border border-warm-800/60 p-4 overflow-auto flex items-center justify-center">
+          <div className="lg:col-span-3 bg-warm-900 rounded-2xl border border-warm-800/60 p-4 overflow-auto flex items-center justify-center">
             <VisualRenderer section={currentSection} />
           </div>
         )}
