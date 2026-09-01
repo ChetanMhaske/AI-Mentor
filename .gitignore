@@ -9,3 +9,6 @@ venv/
 ai-service/chroma_data/
 
 Atlas Cluster/
+
+# Ignore generated media
+ai-service/static/

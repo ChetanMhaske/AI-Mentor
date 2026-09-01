@@ -116,7 +116,8 @@ const createLesson = async (userId, body) => {
           section_index: index,
           explanation_script: section.explanation_script,
           visual_type: section.visual_type || "none",
-          visual_spec: section.visual_spec || {}
+          visual_spec: section.visual_spec || {},
+          language: lesson.language
         }),
       }).catch(err => console.error(`[LessonService] Failed to queue render for section ${index}:`, err));
     });
@@ -255,26 +256,24 @@ const switchSectionLanguage = async (lessonId, sectionIndex, targetLanguage, use
  * Callback from AI Service to update a section with generated video/audio URLs.
  */
 const updateSectionVideo = async (lessonId, sectionIndex, videoData) => {
-  const lesson = await Lesson.findById(lessonId);
-  if (!lesson) throw new Error("Lesson not found");
-
   const { status, video_url, audio_url, visual_data, avatar_status, error } = videoData;
 
-  let plan = lesson.plan;
-  if (!plan || !plan.sections || sectionIndex < 0 || sectionIndex >= plan.sections.length) {
-    throw new Error("Invalid section index");
-  }
+  const updateFields = {
+    [`plan.sections.${sectionIndex}.render_status`]: status
+  };
+  if (video_url) updateFields[`plan.sections.${sectionIndex}.video_url`] = video_url;
+  if (audio_url) updateFields[`plan.sections.${sectionIndex}.audio_url`] = audio_url;
+  if (visual_data) updateFields[`plan.sections.${sectionIndex}.visual_data`] = visual_data;
+  if (avatar_status) updateFields[`plan.sections.${sectionIndex}.avatar_status`] = avatar_status;
+  if (error) updateFields[`plan.sections.${sectionIndex}.error`] = error;
 
-  plan.sections[sectionIndex].render_status = status;
-  if (video_url) plan.sections[sectionIndex].video_url = video_url;
-  if (audio_url) plan.sections[sectionIndex].audio_url = audio_url;
-  if (visual_data) plan.sections[sectionIndex].visual_data = visual_data;
-  if (avatar_status) plan.sections[sectionIndex].avatar_status = avatar_status;
-  if (error) plan.sections[sectionIndex].error = error;
+  const lesson = await Lesson.findByIdAndUpdate(
+    lessonId,
+    { $set: updateFields },
+    { new: true }
+  );
 
-  lesson.markModified("plan");
-  await lesson.save();
-
+  if (!lesson) throw new Error("Lesson not found");
   return lesson;
 };
 

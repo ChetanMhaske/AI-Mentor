@@ -187,6 +187,7 @@ class RenderRequest(BaseModel):
     explanation_script: str
     visual_type: str = "none"
     visual_spec: dict | None = None
+    language: str = "en"
 
 
 class RenderResponse(BaseModel):

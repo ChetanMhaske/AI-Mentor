@@ -139,7 +139,8 @@ async def render_section(lesson_id: str, request: RenderRequest, background_task
         request.section_index,
         request.explanation_script,
         request.visual_type,
-        request.visual_spec
+        request.visual_spec,
+        request.language
     )
 
     return RenderResponse(success=True, job_id=job_id, status="processing")

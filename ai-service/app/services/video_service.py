@@ -40,7 +40,7 @@ os.makedirs(STATIC_DIR, exist_ok=True)
 def get_job_status(job_id: str) -> JobStatusResponse | None:
     return _jobs.get(job_id)
 
-async def generate_tts(script: str, job_id: str) -> str:
+async def generate_tts(script: str, job_id: str, language: str = "en") -> str:
     audio_filename = f"{job_id}.mp3"
     audio_path = os.path.join(STATIC_DIR, audio_filename)
     
@@ -69,10 +69,25 @@ async def generate_tts(script: str, job_id: str) -> str:
                 return f"http://localhost:8000/static/{audio_filename}"
         raise ValueError("No audio returned from Gemini")
     except Exception as e:
-        logger.warning(f"Gemini TTS failed: {e}. Falling back to edge-tts (Male Voice) for job {job_id}")
+        logger.warning(f"Gemini TTS failed: {e}. Falling back to edge-tts for job {job_id}")
         try:
             import edge_tts
-            communicate = edge_tts.Communicate(script, "en-US-GuyNeural")
+            
+            # Map languages to appropriate edge-tts voices
+            voice_map = {
+                "en": "en-US-GuyNeural",
+                "hi": "hi-IN-MadhurNeural",
+                "mr": "mr-IN-ManoharNeural",
+                "te": "te-IN-MohanNeural",
+                "ta": "ta-IN-PallaviNeural",
+                "es": "es-ES-AlvaroNeural",
+                "fr": "fr-FR-HenriNeural",
+                "de": "de-DE-KillianNeural"
+            }
+            voice = voice_map.get(language[:2].lower(), "hi-IN-MadhurNeural")
+            
+            logger.info(f"Using edge-tts voice {voice} for language {language}")
+            communicate = edge_tts.Communicate(script, voice)
             await communicate.save(audio_path)
             return f"http://localhost:8000/static/{audio_filename}"
         except Exception as e2:
@@ -137,7 +152,8 @@ async def render_video_async(
     section_index: int,
     script: str,
     visual_type: str = "none",
-    visual_spec: dict | None = None
+    visual_spec: dict | None = None,
+    language: str = "en"
 ):
     """
     Background task to generate TTS audio and Avatar video, then notify Node server.
@@ -148,7 +164,7 @@ async def render_video_async(
     
     try:
         # TTS Generation
-        audio_url = await generate_tts(script, job_id)
+        audio_url = await generate_tts(script, job_id, language)
         logger.info(f"Job {job_id} TTS complete: {audio_url}")
         
         # Avatar Generation
