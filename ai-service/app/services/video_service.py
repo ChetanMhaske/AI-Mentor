@@ -110,8 +110,6 @@ async def generate_avatar(audio_url: str, job_id: str) -> tuple[str | None, str]
             async with httpx.AsyncClient(timeout=180.0) as client:
                 with open(audio_path, "rb") as af:
                     files = {"audio": (audio_filename, af, "audio/mpeg")}
-                    # If endpoint needs an image, assume it provides a default or we can upload our own. 
-                    # Assuming basic `POST /` taking form-data `audio`.
                     response = await client.post(
                         settings.WAV2LIP_ENDPOINT_URL, 
                         files=files,
